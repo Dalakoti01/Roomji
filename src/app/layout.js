@@ -1,14 +1,13 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Figtree } from "next/font/google";
 import "./globals.css";
+import Providers from "@/redux/Providers";
+import FinalLayout from "@/components/shared/FinalLayout";
+import { Toaster } from "react-hot-toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const figtree = Figtree({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-figtree",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata = {
@@ -20,9 +19,48 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${figtree.variable} font-sans antialiased`}
       >
-        {children}
+        <Providers>
+          <FinalLayout>{children}
+             <Toaster
+              position="top-right"
+              toastOptions={{
+                style: {
+                  background: "#fff",
+                  color: "#333",
+                  borderRadius: "10px",
+                  padding: "12px 16px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                },
+                success: {
+                  style: {
+                    background: "#e6f4ff",
+                    border: "1px solid #eb4c60",
+                    color: "#eb4c60",
+                    fontWeight: "500",
+                  },
+                  iconTheme: {
+                    primary: "#eb4c60",
+                    secondary: "#fff",
+                  },
+                },
+                error: {
+                  style: {
+                    background: "#ffe6e6",
+                    border: "1px solid #ff4d4f",
+                    color: "#ff4d4f",
+                    fontWeight: "500",
+                  },
+                  iconTheme: {
+                    primary: "#ff4d4f",
+                    secondary: "#fff",
+                  },
+                },
+              }}
+            />
+          </FinalLayout>
+        </Providers>
       </body>
     </html>
   );
