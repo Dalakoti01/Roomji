@@ -93,6 +93,12 @@ const rentedPropertiesSchema = new Schema(
       },
     ],
 
+    reportStatus : {
+      type: String,
+      enum: ["Pending", "Reviewed", "Action Taken","Not Reported"],
+      default: "Not Reported",
+    },
+
     isPublic: {
       type: Boolean,
       default: true,

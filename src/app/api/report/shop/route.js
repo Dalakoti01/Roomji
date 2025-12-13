@@ -32,9 +32,9 @@ export async function  POST(req) {
             reportedBy: userId,
             reason,
         });
-
+        existingShop.reportStatus = "Pending";
         await existingShop.save();
-
+        
         return NextResponse.json({ message: "Shop reported successfully", success: true }, { status: 200 });
        
     } catch (error) {

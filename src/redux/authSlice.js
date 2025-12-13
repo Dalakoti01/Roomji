@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { set } from "mongoose";
 
 const intialState = {
   user: null,
@@ -22,7 +21,12 @@ const intialState = {
   adminRentedProperties : [],
   adminSellingProperties : [],
   adminAllServices : [],
-  adminAllShops : [], 
+  adminAllShops : [],
+  adminReportedSellingProperties : [], 
+  adminReportedRentedProperties : [],
+  adminReportedShops : [],
+  adminReportedServices : [],
+
   
 };
 const authSlice = createSlice({
@@ -92,9 +96,21 @@ const authSlice = createSlice({
     setAdminAllShops : (state,action) => {
       state.adminAllShops = action.payload
     },
+    setAdminReportedSellingProperties : (state,action) => {
+      state.adminReportedSellingProperties = action.payload
+    },
+    setAdminReportedRentedProperties : (state,action) => {
+      state.adminReportedRentedProperties = action.payload
+    },
+    setAdminReportedServices : (state,action) => {
+      state.adminReportedServices = action.payload
+    },
+    setAdminReportedShops : (state,action) => {
+      state.adminReportedShops = action.payload
+  },
   },
 });
 
 
-export const {setUser,setRentedProperties,setSellingProperties,setAllUsers,setAllSubscribedUsers,setAllFeedbacks,setAllAdminSupports,setRevenue,setAllServices,setAllShops,setOwnerRentedProperties,setOwnerSellingProperties,setOwnerAllServices,setOwnerAllShops,setSelectedProperty,setOwnersProfile,setAdminDashboard,setAdminRentedProperties,setAdminSellingProperties,setAdminAllServices,setAdminAllShops} = authSlice.actions;
+export const {setUser,setRentedProperties,setSellingProperties,setAllUsers,setAllSubscribedUsers,setAllFeedbacks,setAllAdminSupports,setRevenue,setAllServices,setAllShops,setOwnerRentedProperties,setOwnerSellingProperties,setOwnerAllServices,setOwnerAllShops,setSelectedProperty,setOwnersProfile,setAdminDashboard,setAdminRentedProperties,setAdminSellingProperties,setAdminAllServices,setAdminAllShops,setAdminReportedSellingProperties,setAdminReportedRentedProperties,setAdminReportedServices,setAdminReportedShops} = authSlice.actions;
 export default authSlice.reducer;

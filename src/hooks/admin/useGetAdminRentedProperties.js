@@ -4,12 +4,12 @@ import React, { useEffect } from 'react'
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 
-const useGetAllRentedProperties = () => {
+const useGetAdminRentedProperties = () => {
  const dispatch = useDispatch();
  useEffect(() => {
     const fetchAllRentedProperties = async () => {
         try {
-            const res = await axios.get('api/admin/getProperties',{withCredentials : true});
+            const res = await axios.get('/api/admin/getProperties',{withCredentials : true});
             if(res.data.success){
                 toast.success(res.data.message);
                 dispatch(setAdminRentedProperties(res.data.rentedProperties));
@@ -25,4 +25,4 @@ const useGetAllRentedProperties = () => {
  },[dispatch])
 }
 
-export default useGetAllRentedProperties
+export default useGetAdminRentedProperties

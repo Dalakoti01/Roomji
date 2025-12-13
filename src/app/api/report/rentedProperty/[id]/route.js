@@ -36,6 +36,7 @@ export async function  POST(req,{ params }) {
             reportedBy: userId,
             reason,
         });
+        existingProperty.reportStatus = "Pending";
 
         await existingProperty.save();
 

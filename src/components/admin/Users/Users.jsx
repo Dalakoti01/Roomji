@@ -6,7 +6,6 @@ import UsersList from './UsersList';
 
 export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
-
   return (
     <div className="space-y-6">
       {/* Header */}

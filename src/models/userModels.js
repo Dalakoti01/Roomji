@@ -66,16 +66,41 @@ const userSchema = new Schema(
       },
     },
 
-    totalService : {
-      type : Number,
-      default : 0,
+    totalService: {
+      type: Number,
+      default: 0,
     },
-    totalProperties : {
-      type : Number,
-      default : 0,
+    totalProperties: {
+      type: Number,
+      default: 0,
     },
 
     serviceSubscription: {
+      isActive: {
+        type: Boolean,
+        default: false,
+      },  
+      startDate: {
+        type: Date,
+      },
+      endDate: {
+        type: Date,
+      },
+    },
+    currentPlanDetails: {
+      planName: {
+        type: String,
+        enum: ["Property Only", "Service Only", "Combined Plan"],
+      },
+      planAmount: {
+        type: Number,
+      },
+      isActive : {
+        type: Boolean,
+        default: false,}
+    },
+
+    freeTrial: {
       isActive: {
         type: Boolean,
         default: false,
@@ -86,24 +111,10 @@ const userSchema = new Schema(
       endDate: {
         type: Date,
       },
-    },
-
-    freeTrial: {
-        isActive : {
-          type : Boolean,
-          default : false
-        },
-        startDate : {
-          type : Date,
-
-        },
-        endDate : {
-          type : Date
-        },
-        oneTimeDone : {
-          type : Boolean,
-          default : false
-        }
+      oneTimeDone: {
+        type: Boolean,
+        default: false,
+      },
     },
     userAddress: {
       type: String,

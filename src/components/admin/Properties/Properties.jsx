@@ -3,10 +3,18 @@
 import React, { useState } from 'react';
 import { SearchIcon, FilterIcon } from 'lucide-react';
 import PropertiesList from './PropertiesList';
+import useGetAdminRentedProperties from '@/hooks/admin/useGetAdminRentedProperties';
+import useGetAdminSellingProperties from '@/hooks/admin/useGetAdminSellingProperties';
+import useGetAdminServices from '@/hooks/admin/useGetAdminServices';
+import useGetAdminShops from '@/hooks/admin/useGetAdminShops';
 
 export default function PropertiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('selling');
+  useGetAdminRentedProperties();
+  useGetAdminSellingProperties();
+  useGetAdminServices();
+  useGetAdminShops()
 
   return (
     <div className="space-y-6">

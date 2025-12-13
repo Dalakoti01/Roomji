@@ -4,12 +4,12 @@ import React, { useEffect } from 'react'
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 
-const useGetAllSellingProperties = () => {
+const useGetAdminSellingProperties = () => {
  const dispatch = useDispatch();
  useEffect(() => {
     const fetchAllSellingProperties = async () => {
         try {
-            const res = await axios.get('api/admin/getProperties',{withCredentials : true});
+            const res = await axios.get('/api/admin/getProperties',{withCredentials : true});
             if(res.data.success){
                 toast.success(res.data.message);
                 dispatch(setAdminSellingProperties(res.data.sellingProperties));
@@ -25,4 +25,4 @@ const useGetAllSellingProperties = () => {
  },[dispatch])
 }
 
-export default useGetAllSellingProperties
+export default useGetAdminSellingProperties

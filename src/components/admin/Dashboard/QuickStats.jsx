@@ -2,16 +2,43 @@
 
 import React from 'react';
 import { TrendingUpIcon, UsersIcon, BuildingIcon, DollarSignIcon } from 'lucide-react';
+import { useSelector } from 'react-redux';
+
+const MONTH_NAMES_FULL = [
+  'January','February','March','April','May','June','July','August','September','October','November','December'
+];
+
+function lastN(arr, n) {
+  const a = (arr || []).slice(-n);
+  // pad left with zeros if shorter
+  if (a.length < n) {
+    return Array(n - a.length).fill(0).concat(a);
+  }
+  return a;
+}
 
 export default function QuickStats() {
-  const monthlyData = [
-    { month: 'January', users: 180, properties: 340, revenue: 18500 },
-    { month: 'February', users: 195, properties: 385, revenue: 21200 },
-    { month: 'March', users: 210, properties: 420, revenue: 19800 },
-    { month: 'April', users: 225, properties: 455, revenue: 22400 },
-    { month: 'May', users: 240, properties: 490, revenue: 24100 },
-    { month: 'June', users: 255, properties: 525, revenue: 22800 },
-  ];
+  const { adminDashboard } = useSelector((store) => store.auth || {});
+  const usersByMonth = adminDashboard?.usersByMonth ?? Array(12).fill(0);
+  const propertiesByMonth = adminDashboard?.propertiesByMonth ?? Array(12).fill(0);
+  const revenueByMonth = adminDashboard?.revenueByMonth ?? Array(12).fill(0);
+
+  // show last 6 months for compact UI
+  const last6Users = lastN(usersByMonth, 6);
+  const last6Properties = lastN(propertiesByMonth, 6);
+  const last6Revenue = lastN(revenueByMonth, 6);
+
+  // labels — last 6 month names (relative to calendar end). We'll map indices from end.
+  const monthNames = MONTH_NAMES_FULL;
+  const startIdx = Math.max(0, 12 - 6);
+  const last6MonthNames = monthNames.slice(startIdx);
+
+  const monthlyData = last6MonthNames.map((monthName, idx) => ({
+    month: monthName,
+    users: last6Users[idx] ?? 0,
+    properties: last6Properties[idx] ?? 0,
+    revenue: last6Revenue[idx] ?? 0,
+  }));
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -47,7 +74,7 @@ export default function QuickStats() {
                 <div>
                   <p className="text-xs text-gray-500">Revenue</p>
                   <p className="text-sm font-medium text-gray-900">
-                    ₹{data.revenue.toLocaleString()}
+                    ₹{Number(data.revenue || 0).toLocaleString()}
                   </p>
                 </div>
               </div>

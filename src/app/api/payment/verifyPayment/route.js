@@ -25,8 +25,19 @@ export async function POST(req) {
       );
     }
 
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentId } = await req.json();
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !paymentId) {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      paymentId,
+    } = await req.json();
+
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature ||
+      !paymentId
+    ) {
       return NextResponse.json(
         { message: "Payment verification details missing", success: false },
         { status: 400 }
@@ -41,7 +52,7 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Verify signature
+    // Verify signature
     const generatedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_API_SECRET)
       .update(razorpay_order_id + "|" + razorpay_payment_id)
@@ -56,22 +67,48 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Mark payment as verified
+    // Mark payment as verified
     payment.razorpayPaymentId = razorpay_payment_id;
     payment.razorpaySignature = razorpay_signature;
     payment.status = "paid";
     payment.verified = true;
     await payment.save();
 
-    // ✅ Activate user's subscription
-    const { planDuration, planType } = payment.planDetail;
+    // Activate user's subscription + update currentPlanDetails
+    // Expect payment.planDetail to contain planDuration and planType, and optionally planAmount
+    const planDetail = payment.planDetail || {};
+    const { planDuration, planType } = planDetail;
+
+    // Determine start & end dates
     const startDate = new Date();
-    let endDate = new Date(startDate);
+    const endDate = new Date(startDate);
 
-    if (planDuration === "quaterly") endDate.setMonth(endDate.getMonth() + 3);
-    if (planDuration === "half-yearly") endDate.setMonth(endDate.getMonth() + 6);
-    if (planDuration === "annually") endDate.setFullYear(endDate.getFullYear() + 1);
+    // defensive: handle common spellings in your earlier code
+    const dur = (planDuration || "").toString().toLowerCase();
+    if (dur === "quaterly" || dur === "quarterly") endDate.setMonth(endDate.getMonth() + 3);
+    else if (dur === "half-yearly" || dur === "half yearly" || dur === "halfyearly") endDate.setMonth(endDate.getMonth() + 6);
+    else if (dur === "annually" || dur === "yearly") endDate.setFullYear(endDate.getFullYear() + 1);
+    // else: no change (or you may add other durations)
 
+    // Map planType -> human readable planName (match currentPlanDetails enum)
+    let planName = "Combined Plan";
+    if (planType === "propertyPlan") planName = "Property Only";
+    else if (planType === "servicePlan") planName = "Service Only";
+    else planName = "Combined Plan";
+
+    // Determine plan amount: try payment.planDetail.planAmount, fallback to payment.amount or payment.amountPaid
+    const planAmount =
+      typeof planDetail.planAmount === "number"
+        ? planDetail.planAmount
+        : typeof payment.planAmount === "number"
+        ? payment.planAmount
+        : typeof payment.amount === "number"
+        ? payment.amount
+        : typeof payment.amountPaid === "number"
+        ? payment.amountPaid
+        : null;
+
+    // Update respective subscription object (keep previous behavior)
     if (planType === "propertyPlan") {
       existingUser.propertySubscription = {
         isActive: true,
@@ -84,8 +121,28 @@ export async function POST(req) {
         startDate,
         endDate,
       };
+    } else {
+      // if combined / unknown, set both (optional)
+      existingUser.propertySubscription = {
+        isActive: true,
+        startDate,
+        endDate,
+      };
+      existingUser.serviceSubscription = {
+        isActive: true,
+        startDate,
+        endDate,
+      };
     }
 
+    // Update the new field currentPlanDetails on user
+    existingUser.currentPlanDetails = {
+      planName,
+      planAmount: planAmount !== null ? planAmount : undefined,
+      isActive: true,
+    };
+
+    // Save user
     await existingUser.save();
 
     return NextResponse.json(

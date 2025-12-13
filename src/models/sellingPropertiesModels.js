@@ -127,6 +127,11 @@ const sellingPropertiesSchema = new Schema(
         },
       },
     ],
+    reportStatus : {
+      type: String,
+      enum: ["Pending", "Reviewed", "Action Taken","Not Reported"],
+      default: "Not Reported",
+    },
     overallratings: {
       type: Number,
     },

@@ -3,7 +3,7 @@
 import React from 'react';
 
 export default function StatsCard({ title, value, icon: Icon, change, timeframe }) {
-  const isPositive = change.startsWith('+');
+  const isPositive = typeof change === 'string' && change.startsWith('+');
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -17,16 +17,16 @@ export default function StatsCard({ title, value, icon: Icon, change, timeframe 
         </div>
       </div>
 
-      <div className="mt-4">
-        <span
-          className={`text-sm font-medium ${
-            isPositive ? 'text-green-600' : 'text-red-600'
-          }`}
-        >
-          {change}
-        </span>
-        <span className="text-sm text-gray-500"> {timeframe}</span>
-      </div>
+      {change ? (
+        <div className="mt-4">
+          <span
+            className={`text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}
+          >
+            {change}
+          </span>
+          {timeframe ? <span className="text-sm text-gray-500"> {timeframe}</span> : null}
+        </div>
+      ) : null}
     </div>
   );
 }

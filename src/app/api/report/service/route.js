@@ -33,6 +33,8 @@ export async function  POST(req) {
             reason,
         });
 
+        existingService.reportStatus = "Pending";
+
         await existingService.save();
 
         return NextResponse.json({ message: "Property reported successfully", success: true }, { status: 200 });

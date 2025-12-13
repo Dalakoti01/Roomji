@@ -10,40 +10,67 @@ import useGetAdminDashboard from '@/hooks/admin/useGetAdminDashboard';
 import { useSelector } from 'react-redux';
 
 export default function DashboardPage() {
-  useGetAdminDashboard()
+  useGetAdminDashboard();
+  const { adminDashboard } = useSelector((store) => store.auth || {});
+
+  // safe getters with defaults
+  const usersCount = adminDashboard?.userCount ?? 0;
+  const totalProperties = adminDashboard?.totalPropertiesCount ?? 0;
+  const totalRevenue = adminDashboard?.totalRevenue ?? 0;
+
+  // compute a simple change metric: compare last month vs previous month for users & revenue
+  const monthIndex = new Date().getMonth(); // 0..11 (not used directly for last-month in dataset)
+  const usersByMonth = adminDashboard?.usersByMonth ?? Array(12).fill(0);
+  const revenueByMonth = adminDashboard?.revenueByMonth ?? Array(12).fill(0);
+  // last two non-null months from the end
+  const getLastTwo = (arr) => {
+    const rev = (arr || []).slice();
+    // take last two numeric values (prefer end of year)
+    const last = rev[rev.length - 1] ?? 0;
+    const prev = rev[rev.length - 2] ?? 0;
+    return [last, prev];
+  };
+  const [lastUsers, prevUsers] = getLastTwo(usersByMonth);
+  const [lastRevenue, prevRevenue] = getLastTwo(revenueByMonth);
+
+  const calcChange = (current, previous) => {
+    if (!previous && !current) return '0%';
+    if (!previous && current) return `+${Math.round((current - previous) / (previous || 1) * 100)}%`;
+    const diff = current - previous;
+    const pct = Math.round((diff / (previous || 1)) * 100);
+    return (pct >= 0 ? '+' : '') + `${pct}%`;
+  };
+
   const stats = [
     {
       title: 'Total Users',
-      value: '2,345',
+      value: usersCount.toLocaleString(),
       icon: UsersIcon,
-      change: '+12%',
-      timeframe: 'from last month',
+      change: calcChange(lastUsers, prevUsers),
+      timeframe: 'last month vs previous',
     },
     {
       title: 'Total Properties',
-      value: '4,721',
+      value: totalProperties.toLocaleString(),
       icon: BuildingIcon,
-      change: '+23%',
-      timeframe: 'from last month',
+      change: undefined, // no historical data here — optional
+      timeframe: '',
     },
     {
       title: 'Reports',
-      value: '48',
+      value: '0', // you don't have this in adminDashboard — keep 0 or wire it later
       icon: AlertTriangleIcon,
-      change: '-8%',
-      timeframe: 'from last month',
+      change: undefined,
+      timeframe: '',
     },
     {
       title: 'Revenue',
-      value: '₹34,500',
+      value: `₹${Number(totalRevenue || 0).toLocaleString()}`,
       icon: DollarSignIcon,
-      change: '+18%',
-      timeframe: 'from last month',
+      change: calcChange(lastRevenue, prevRevenue),
+      timeframe: 'last month vs previous',
     },
   ];
-
-  const {adminDashboard} = useSelector((store) => store.auth)
-  console.log("adminDashboard:", adminDashboard)
 
   return (
     <div className="space-y-6">

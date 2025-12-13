@@ -10,22 +10,18 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useSelector } from 'react-redux';
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 export default function RevenueChart() {
-  const data = [
-    { name: 'Jan', revenue: 4000 },
-    { name: 'Feb', revenue: 3000 },
-    { name: 'Mar', revenue: 2000 },
-    { name: 'Apr', revenue: 2780 },
-    { name: 'May', revenue: 1890 },
-    { name: 'Jun', revenue: 2390 },
-    { name: 'Jul', revenue: 3490 },
-    { name: 'Aug', revenue: 4000 },
-    { name: 'Sep', revenue: 4500 },
-    { name: 'Oct', revenue: 5200 },
-    { name: 'Nov', revenue: 4800 },
-    { name: 'Dec', revenue: 6000 },
-  ];
+  const { adminDashboard } = useSelector((store) => store.auth || {});
+  const revenueByMonth = adminDashboard?.revenueByMonth ?? Array(12).fill(0);
+
+  const data = MONTH_NAMES.map((m, i) => ({
+    name: m,
+    revenue: Number(revenueByMonth[i] ?? 0),
+  }));
 
   return (
     <div className="bg-white rounded-lg shadow p-6 h-96">
