@@ -12,5 +12,9 @@ const recentActivitiesSchema = new Schema({
 
 },{timestamps:true});
 
-export const RecentActivities = mongoose.model('RecentActivities', recentActivitiesSchema);
+// ✅ SAFE MODEL EXPORT (Next.js compatible)
+const RecentActivities =
+  mongoose.models.RecentActivities ||
+  mongoose.model("RecentActivities", recentActivitiesSchema);
+
 export default RecentActivities;

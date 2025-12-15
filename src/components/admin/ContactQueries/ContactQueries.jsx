@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import { SearchIcon, FilterIcon } from 'lucide-react';
 import ContactQueriesList from './ContactQueriesList';
+import useGetAllAdminSupports from '@/hooks/admin/useGetAllAdminSupports';
 
 export default function ContactQueriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  useGetAllAdminSupports()
 
   return (
     <div className="space-y-6">

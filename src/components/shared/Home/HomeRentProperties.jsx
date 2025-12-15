@@ -113,7 +113,7 @@ export default function HomeRentProperties({ filters }) {
                           property?.description || "No description provided."
                         }
                         ownerPhoto={
-                          property?.owner?.profilePhoto ||
+                          property?.ownerId?.profilePhoto ||
                           "https://randomuser.me/api/portraits/men/32.jpg"
                         }
                         ownerName={property?.owner?.fullName || "Unknown Owner"}

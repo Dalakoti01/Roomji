@@ -3,15 +3,17 @@
 import React, { useState } from 'react';
 import { SearchIcon, FilterIcon } from 'lucide-react';
 import FeedbackList from './FeedbackList';
+import useGetAllFeedback from '@/hooks/admin/useGetAllFeedback';
 
 export default function FeedbackPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  useGetAllFeedback()
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">User Feedback</h1>
+        <h1 className="text-2xl font-bold text-gray-900">User Feedback  </h1>
       </div>
 
       {/* Search + Filter */}

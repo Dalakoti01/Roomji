@@ -4,20 +4,21 @@ import React, { useEffect, useState } from "react";
 import { MoreHorizontalIcon, UserIcon } from "lucide-react";
 import useGetAllUsers from "@/hooks/admin/useGetAllUsers";
 import { useSelector } from "react-redux";
-import { useRouter } from "next/navigation";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function UsersList({ searchQuery = "" }) {
   // ensure global fetch/hook runs
   useGetAllUsers();
 
-  // grab users from redux (auth slice per your project)
+  // grab users from redux
   const { allUsers = [] } = useSelector((store) => store.auth || {});
 
-  // local UI state (derived from allUsers)
+  // local UI state
   const [users, setUsers] = useState([]);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
 
-  // map server user documents to the UI shape we need
+  // map redux users to UI shape
   useEffect(() => {
     const mapped = (allUsers || []).map((u) => {
       const joinDate = u?.createdAt
@@ -35,88 +36,82 @@ export default function UsersList({ searchQuery = "" }) {
         phone: u.phoneNumber || "—",
         joinDate,
         status: u.blocked ? "blocked" : "active",
-        propertiesCount: typeof u.totalProperties === "number" ? u.totalProperties : 0,
-        servicesCount: typeof u.totalService === "number" ? u.totalService : 0,
-        raw: u, // preserve original object if needed
+        propertiesCount:
+          typeof u.totalProperties === "number" ? u.totalProperties : 0,
+        servicesCount:
+          typeof u.totalService === "number" ? u.totalService : 0,
+        raw: u,
       };
     });
 
     setUsers(mapped);
   }, [allUsers]);
 
-  // optimistic toggle block/unblock
+  // 🔒 Block / Unblock user
   const toggleBlockUser = async (userId) => {
+    const prevUsers = users;
+
     // optimistic update
     setUsers((prev) =>
       prev.map((user) =>
         user.id === userId
-          ? { ...user, status: user.status === "active" ? "blocked" : "active" }
+          ? {
+              ...user,
+              status: user.status === "active" ? "blocked" : "active",
+            }
           : user
       )
     );
     setActionMenuOpen(null);
 
-    // Try to call backend to persist change.
-    // Replace endpoint with your real admin route.
     try {
-      const res = await fetch(`/api/admin/users/${userId}/toggle-block`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        // you could send the desired new status, or server can toggle
-        body: JSON.stringify({}),
-      });
+      const res = await axios.post("/api/admin/blockUser", { id: userId });
 
-      if (!res.ok) {
-        throw new Error("Failed to update user status on server");
+      if (res.data?.success) {
+        toast.success(res.data.message || "User status updated");
+      } else {
+        throw new Error("Failed to update user");
       }
-      // optionally re-fetch users via your hook or dispatch if needed
-    } catch (err) {
-      // revert optimistic change on error
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === userId
-            ? { ...user, status: user.status === "active" ? "blocked" : "active" }
-            : user
-        )
+    } catch (error) {
+      setUsers(prevUsers);
+      toast.error(
+        error?.response?.data?.message || "Failed to update user status"
       );
-      // optionally surface toast/notification (not included to keep dep-free)
-      console.error("Could not toggle block:", err);
-      alert("Failed to update user status. Check console.");
     }
   };
 
-  // placeholder view details handler
-  const viewDetails = (user) => {
-    // navigate to details page if you have one, e.g. /admin/users/[id]
-    // or open modal
-    // router.push(`/admin/users/${user.id}`);
-    alert(`View details for ${user.name}`);
-  };
-
-  // placeholder delete handler
+  // 🗑️ Delete user
   const deleteUser = async (userId) => {
-    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this user?\nAll their properties, services and shops will also be deleted."
+      )
+    )
+      return;
+
+    const prevUsers = users;
 
     // optimistic remove
-    const prev = users;
     setUsers((u) => u.filter((x) => x.id !== userId));
     setActionMenuOpen(null);
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Delete failed");
-      // optionally re-fetch users via hook/dispatch
-    } catch (err) {
-      // revert on error
-      setUsers(prev);
-      console.error("Delete failed:", err);
-      alert("Failed to delete user. Check console.");
+      const res = await axios.post("/api/admin/deleteUser", { id: userId });
+
+      if (res.data?.success) {
+        toast.success("User deleted successfully");
+      } else {
+        throw new Error("Delete failed");
+      }
+    } catch (error) {
+      setUsers(prevUsers);
+      toast.error(
+        error?.response?.data?.message || "Failed to delete user"
+      );
     }
   };
 
-  // filter by searchQuery (searches name, email, phone)
+  // filter users by search query
   const query = (searchQuery || "").toLowerCase().trim();
   const filteredUsers = users.filter((user) => {
     if (!query) return true;
@@ -155,14 +150,14 @@ export default function UsersList({ searchQuery = "" }) {
           {filteredUsers.length > 0 ? (
             filteredUsers.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
-                {/* User column */}
+                {/* User */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                    <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                       <UserIcon className="h-5 w-5 text-gray-500" />
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                    <div className="ml-4 text-sm font-medium text-gray-900">
+                      {user.name}
                     </div>
                   </div>
                 </td>
@@ -174,30 +169,43 @@ export default function UsersList({ searchQuery = "" }) {
                 </td>
 
                 {/* Join Date */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinDate}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.joinDate}
+                </td>
 
                 {/* Properties */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.propertiesCount}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.propertiesCount}
+                </td>
 
                 {/* Services */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.servicesCount}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.servicesCount}
+                </td>
 
                 {/* Status */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                    className={`px-2 inline-flex text-xs font-semibold rounded-full ${
+                      user.status === "active"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                    {user.status.charAt(0).toUpperCase() +
+                      user.status.slice(1)}
                   </span>
                 </td>
 
                 {/* Actions */}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 relative">
+                <td className="px-6 py-4 whitespace-nowrap relative">
                   <button
-                    className="text-gray-500 hover:text-gray-700"
-                    onClick={() => setActionMenuOpen(actionMenuOpen === user.id ? null : user.id)}
+                    className="text-gray-500 hover:text-gray-700 cursor-pointer"
+                    onClick={() =>
+                      setActionMenuOpen(
+                        actionMenuOpen === user.id ? null : user.id
+                      )
+                    }
                   >
                     <MoreHorizontalIcon className="h-5 w-5" />
                   </button>
@@ -207,16 +215,13 @@ export default function UsersList({ searchQuery = "" }) {
                       <div className="py-1">
                         <button
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => viewDetails(user)}
-                        >
-                          View Details
-                        </button>
-                        <button
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => toggleBlockUser(user.id)}
                         >
-                          {user.status === "active" ? "Block User" : "Unblock User"}
+                          {user.status === "active"
+                            ? "Block User"
+                            : "Unblock User"}
                         </button>
+
                         <button
                           className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                           onClick={() => deleteUser(user.id)}
@@ -231,31 +236,16 @@ export default function UsersList({ searchQuery = "" }) {
             ))
           ) : (
             <tr>
-              <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+              <td
+                colSpan={7}
+                className="px-6 py-4 text-center text-sm text-gray-500"
+              >
                 No users found matching your search criteria.
               </td>
             </tr>
           )}
         </tbody>
       </table>
-
-      {/* Footer */}
-      <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">{filteredUsers.length > 0 ? 1 : 0}</span> to{" "}
-            <span className="font-medium">{filteredUsers.length}</span> of <span className="font-medium">{users.length}</span> users
-          </div>
-          <div className="flex-1 flex justify-end">
-            <button className="px-4 py-2 border border-gray-300 text-sm rounded-md text-gray-700 bg-white hover:bg-gray-50 mr-3">
-              Previous
-            </button>
-            <button className="px-4 py-2 border border-gray-300 text-sm rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,60 +1,15 @@
 'use client';
 
-import React from 'react';
 import { CheckCircleIcon } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 export default function RecentTransactions() {
-  const transactions = [
-    {
-      id: '1',
-      user: 'Rahul Sharma',
-      email: 'rahul@example.com',
-      plan: 'Premium',
-      amount: '₹1,999',
-      date: '12 Jun 2023',
-      status: 'successful',
-    },
-    {
-      id: '2',
-      user: 'Priya Patel',
-      email: 'priya@example.com',
-      plan: 'Basic',
-      amount: '₹999',
-      date: '05 Mar 2023',
-      status: 'successful',
-    },
-    {
-      id: '3',
-      user: 'Amit Kumar',
-      email: 'amit@example.com',
-      plan: 'Basic',
-      amount: '₹999',
-      date: '18 Jan 2023',
-      status: 'successful',
-    },
-    {
-      id: '4',
-      user: 'Neha Singh',
-      email: 'neha@example.com',
-      plan: 'Pro',
-      amount: '₹2,999',
-      date: '24 Aug 2023',
-      status: 'successful',
-    },
-    {
-      id: '5',
-      user: 'Vikram Joshi',
-      email: 'vikram@example.com',
-      plan: 'Basic',
-      amount: '₹999',
-      date: '10 Nov 2023',
-      status: 'successful',
-    },
-  ];
+  const { revenueRecords } = useSelector((store) => store.auth);
+  const transactions = revenueRecords?.recentTransactions || [];
 
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-6 py-4 border-b">
         <h2 className="text-lg font-medium text-gray-900">
           Recent Transactions
         </h2>
@@ -68,7 +23,7 @@ export default function RecentTransactions() {
                 (header) => (
                   <th
                     key={header}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                   >
                     {header}
                   </th>
@@ -78,32 +33,55 @@ export default function RecentTransactions() {
           </thead>
 
           <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((t) => (
-              <tr key={t.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  #{t.id.padStart(6, '0')}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">
-                    {t.user}
-                  </div>
-                  <div className="text-sm text-gray-500">{t.email}</div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{t.plan}</td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {t.amount}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{t.date}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-1.5" />
-                    <span className="text-sm text-green-800 font-medium">
-                      Successful
-                    </span>
-                  </div>
+            {transactions.length > 0 ? (
+              transactions.map((t) => (
+                <tr key={t.transactionId} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    #{t.transactionId?.slice(-6)}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900">
+                      {t.fullName}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {t.email}
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {t.planType === "propertyPlan" ? "Property" : "Service"} (
+                    {t.planDuration})
+                  </td>
+
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    ₹{t.amount}
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {new Date(t.date).toLocaleDateString("en-IN")}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-1.5" />
+                      <span className="text-sm text-green-800 font-medium">
+                        Paid
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-6 py-6 text-center text-sm text-gray-500"
+                >
+                  No transactions found
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

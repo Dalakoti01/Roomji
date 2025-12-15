@@ -106,7 +106,7 @@ export default function HomeRentShops({ filters }) {
                         }`}
                         description={shop?.description || "No description available."}
                         ownerPhoto={
-                          shop?.owner?.profilePhoto ||
+                          shop?.ownerId?.profilePhoto ||
                           "https://randomuser.me/api/portraits/men/32.jpg"
                         }
                         ownerName={shop?.owner?.fullName || "Unknown Owner"}

@@ -26,6 +26,7 @@ const intialState = {
   adminReportedRentedProperties : [],
   adminReportedShops : [],
   adminReportedServices : [],
+  revenueRecords : {}
 
   
 };
@@ -108,9 +109,12 @@ const authSlice = createSlice({
     setAdminReportedShops : (state,action) => {
       state.adminReportedShops = action.payload
   },
+  setRevenueRecords : (state,action)=> {
+    state.revenueRecords = action.payload
+  }
   },
 });
 
 
-export const {setUser,setRentedProperties,setSellingProperties,setAllUsers,setAllSubscribedUsers,setAllFeedbacks,setAllAdminSupports,setRevenue,setAllServices,setAllShops,setOwnerRentedProperties,setOwnerSellingProperties,setOwnerAllServices,setOwnerAllShops,setSelectedProperty,setOwnersProfile,setAdminDashboard,setAdminRentedProperties,setAdminSellingProperties,setAdminAllServices,setAdminAllShops,setAdminReportedSellingProperties,setAdminReportedRentedProperties,setAdminReportedServices,setAdminReportedShops} = authSlice.actions;
+export const {setUser,setRentedProperties,setRevenueRecords,setSellingProperties,setAllUsers,setAllSubscribedUsers,setAllFeedbacks,setAllAdminSupports,setRevenue,setAllServices,setAllShops,setOwnerRentedProperties,setOwnerSellingProperties,setOwnerAllServices,setOwnerAllShops,setSelectedProperty,setOwnersProfile,setAdminDashboard,setAdminRentedProperties,setAdminSellingProperties,setAdminAllServices,setAdminAllShops,setAdminReportedSellingProperties,setAdminReportedRentedProperties,setAdminReportedServices,setAdminReportedShops} = authSlice.actions;
 export default authSlice.reducer;

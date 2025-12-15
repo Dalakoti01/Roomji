@@ -110,7 +110,7 @@ export default function HomeServices({ filters }) {
                           service?.description || "No description provided."
                         }
                         ownerPhoto={
-                          service?.owner?.profilePhoto ||
+                          service?.ownerId?.profilePhoto ||
                           "https://randomuser.me/api/portraits/men/32.jpg"
                         }
                         ownerName={service?.owner?.fullName || "Unknown Provider"}
