@@ -212,7 +212,7 @@ export async function POST(req) {
     });
 
     await newService.save();
-    existingUser?.totalService++;
+    existingUser.totalService++;
     await existingUser.save();
 
     await RecentActivities.create({
