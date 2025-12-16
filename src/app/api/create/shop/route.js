@@ -70,7 +70,7 @@ export async function POST(req) {
       } else {
   console.log("🛑 Free trial exhausted — blocking request for user:", existingUser._id);
   existingUser.totalProperties++;
-  await totalProperties.save()
+  await existingUser.save()
   return NextResponse.json(
     {
       message:
