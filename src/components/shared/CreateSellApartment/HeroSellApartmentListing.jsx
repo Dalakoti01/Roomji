@@ -23,97 +23,103 @@ export default function HeroSellApartmentListing() {
   const [images, setImages] = useState([]);
 
   // ✅ Handle form submission
- const handlePublish = async () => {
-  try {
-    const data = new FormData();
+  const handlePublish = async () => {
+    try {
+      const data = new FormData();
 
-    // --- (build your form data as before) ---
-    data.append("title", formData.title || "");
-    data.append("description", formData.description || "");
-    data.append("price", formData.price || "");
-    data.append("area", formData.area || "");
-    data.append("securityDeposit", formData.securityDeposit || "");
-    data.append("category", formData.category || "");
+      // --- (build your form data as before) ---
+      data.append("title", formData.title || "");
+      data.append("description", formData.description || "");
+      data.append("price", formData.price || "");
+      data.append("area", formData.area || "");
+      data.append("securityDeposit", formData.securityDeposit || "");
+      data.append("category", formData.category || "");
 
-    if (formData.policies && formData.policies.length > 0) {
-      data.append("policies", formData.policies.join(","));
+      if (formData.policies && formData.policies.length > 0) {
+        data.append("policies", formData.policies.join(","));
+      }
+
+      data.append("uniqueCode", user?.uniqueId || "TEMP123");
+      data.append("city", locationData.city || "");
+      data.append("state", locationData.state || "");
+      data.append("detailedAddress", locationData.address || "");
+      data.append("googleLat", locationData.lat || "");
+      data.append("googleLng", locationData.lng || "");
+      data.append("googlePlaceId", locationData.placeId || "");
+
+      if (formData.amenities && formData.amenities.length > 0) {
+        data.append("amenities", formData.amenities.join(","));
+      }
+
+      data.append("fullName", providerDetails.fullName || "");
+      data.append("email", providerDetails.email || "");
+      data.append("phoneNumber", providerDetails.phoneNumber || "");
+      data.append(
+        "showPhoneNumber",
+        providerDetails.showPhoneNumber ? "true" : "false"
+      );
+      data.append("profession", providerDetails.profession || "");
+      data.append("personalNote", providerDetails.personalNote || "");
+
+      images.forEach((file) => data.append("photos", file));
+
+      toast.loading("Publishing your listing...");
+
+      // IMPORTANT: do NOT set Content-Type manually for FormData
+      const res = await axios.post("/api/create/sellProperties", data, {
+        // Allow handling of 4xx in resolved flow (so axios doesn't throw on 403)
+        validateStatus: (status) => status < 500,
+        // headers: { /* DO NOT set Content-Type here */ },
+      });
+
+      toast.dismiss();
+      console.log("Publish response status:", res.status, "data:", res.data);
+
+      if (res.status === 201 && res.data?.success) {
+        toast.success("Property listed successfully!");
+        router.push("/user/profile");
+        return;
+      }
+
+      // Specific free trial exhausted handling
+      if (res.status === 403 && res.data?.code === "FREE_TRIAL_EXHAUSTED") {
+        console.log("Free trial exhausted detected (resolved path)");
+        toast.error(
+          "You have exhausted your free trial. Buy a subscription to keep posting properties."
+        );
+        router.push("/user/pricing");
+        return;
+      }
+
+      // Other non-2xx handled responses
+      toast.error(res.data?.message || "Failed to publish listing");
+    } catch (error) {
+      // Axios threw — maybe network error or server closed stream
+      toast.dismiss();
+      console.error("Publish error (catch):", error);
+
+      // If server responded but axios rejected, check response inside error
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+
+      if (status === 403 && data?.code === "FREE_TRIAL_EXHAUSTED") {
+        console.log("Free trial exhausted detected (catch path)");
+        toast.error(
+          "You have exhausted your free trial. Buy a subscription to keep posting properties."
+        );
+        router.push("/user/pricing");
+        return;
+      }
+
+      // Optional: show server message if available
+      if (data?.message) {
+        toast.error(data.message);
+        return;
+      }
+
+      toast.error("Something went wrong while publishing");
     }
-
-    data.append("uniqueCode", user?.uniqueId || "TEMP123");
-    data.append("city", locationData.city || "");
-    data.append("state", locationData.state || "");
-    data.append("detailedAddress", locationData.address || "");
-    data.append("googleLat", locationData.lat || "");
-    data.append("googleLng", locationData.lng || "");
-    data.append("googlePlaceId", locationData.placeId || "");
-
-    if (formData.amenities && formData.amenities.length > 0) {
-      data.append("amenities", formData.amenities.join(","));
-    }
-
-    data.append("fullName", providerDetails.fullName || "");
-    data.append("email", providerDetails.email || "");
-    data.append("phoneNumber", providerDetails.phoneNumber || "");
-    data.append("showPhoneNumber", providerDetails.showPhoneNumber ? "true" : "false");
-    data.append("profession", providerDetails.profession || "");
-    data.append("personalNote", providerDetails.personalNote || "");
-
-    images.forEach((file) => data.append("photos", file));
-
-    toast.loading("Publishing your listing...");
-
-    // IMPORTANT: do NOT set Content-Type manually for FormData
-    const res = await axios.post("/api/create/sellProperties", data, {
-      // Allow handling of 4xx in resolved flow (so axios doesn't throw on 403)
-      validateStatus: (status) => status < 500,
-      // headers: { /* DO NOT set Content-Type here */ },
-    });
-
-    toast.dismiss();
-    console.log("Publish response status:", res.status, "data:", res.data);
-
-    if (res.status === 201 && res.data?.success) {
-      toast.success("Property listed successfully!");
-      router.push("/user/profile");
-      return;
-    }
-
-    // Specific free trial exhausted handling
-    if (res.status === 403 && res.data?.code === "FREE_TRIAL_EXHAUSTED") {
-      console.log("Free trial exhausted detected (resolved path)");
-      toast.error("You have exhausted your free trial. Buy a subscription to keep posting properties.");
-      router.push("/user/pricing");
-      return;
-    }
-
-    // Other non-2xx handled responses
-    toast.error(res.data?.message || "Failed to publish listing");
-  } catch (error) {
-    // Axios threw — maybe network error or server closed stream
-    toast.dismiss();
-    console.error("Publish error (catch):", error);
-
-    // If server responded but axios rejected, check response inside error
-    const status = error?.response?.status;
-    const data = error?.response?.data;
-
-    if (status === 403 && data?.code === "FREE_TRIAL_EXHAUSTED") {
-      console.log("Free trial exhausted detected (catch path)");
-      toast.error("You have exhausted your free trial. Buy a subscription to keep posting properties.");
-      router.push("/user/pricing");
-      return;
-    }
-
-    // Optional: show server message if available
-    if (data?.message) {
-      toast.error(data.message);
-      return;
-    }
-
-    toast.error("Something went wrong while publishing");
-  }
-};
-
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -144,6 +150,7 @@ export default function HeroSellApartmentListing() {
         </div>
         <div className="w-full md:w-1/3">
           <ProviderDetails
+            photo={user?.profilePhoto}
             fullName={user?.fullName}
             email={user?.email}
             phoneNumber={user?.phoneNumber}

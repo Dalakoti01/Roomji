@@ -7,7 +7,7 @@ export async function POST(req, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json(
         { message: "ID is required", success: false },

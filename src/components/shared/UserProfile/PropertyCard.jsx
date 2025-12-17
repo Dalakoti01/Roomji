@@ -30,7 +30,7 @@ export default function PropertyCard({
   propertyId,
   type, // determines API endpoint
   showToggle = true,
-  userName = "Ashish Kumar",
+  userName ,
   initialVisibility = true, // from backend
 }) {
   const [isVisible, setIsVisible] = useState(initialVisibility);

@@ -11,8 +11,8 @@ import PropertyGallery from "../RoomInside/PropertyGallery";
 import PropertyDetails from "../RoomInside/PropertyDetails";
 import RoomPolicies from "../RoomInside/RoomPolicies";
 import PropertyMap from "../RoomInside/PropertyMap";
-import ReviewsSection from "../RoomInside/ReviewSection";
 import ContactCard from "../RoomInside/ContactCard";
+import ReviewsSection from "./ReviewSection";
 
 const HeroSellingPropertyInside = () => {
   const {id} = useParams()

@@ -126,6 +126,7 @@ export default function CreateServiceListing() {
         </div>
         <div className="w-full md:w-1/3">
           <ProviderDetails
+          photo={user?.profilePhoto}
             fullName={user?.fullName}
             email={user?.email}
             phoneNumber={user?.phoneNumber}

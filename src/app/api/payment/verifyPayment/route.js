@@ -72,6 +72,9 @@ export async function POST(req) {
     payment.razorpaySignature = razorpay_signature;
     payment.status = "paid";
     payment.verified = true;
+    payment.userId = userId;
+    payment.fullName = existingUser.fullName;
+    payment.email = existingUser.email;
     await payment.save();
 
     // Activate user's subscription + update currentPlanDetails

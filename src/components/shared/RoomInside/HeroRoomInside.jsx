@@ -68,13 +68,13 @@ const HeroRoomInside = () => {
       </div>
 
       {/* Map Section */}
-      <div className="my-8">
+      {/* <div className="my-8">
         <h2 className="text-xl font-bold mb-4">Where you'll be</h2>
         <p className="text-sm text-gray-500 mb-2">
           Dhonakulhi Island, Uttar Pradesh, India
         </p>
         <PropertyMap />
-      </div>
+      </div> */}
 
       {/* Reviews Section */}
       <ReviewsSection />

@@ -4,11 +4,15 @@ import React, { useState, useMemo } from "react";
 import TopFilter from "../Rooms/TopFilter";
 import ShortCard from "../ShortCard";
 import useGetAllSellingProperties from "@/hooks/public/useGetAllSellingProperties";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import LeftFilter from "./LeftFilter";
+import { setSelectedProperty } from "@/redux/authSlice";
+import { useRouter } from "next/navigation";
 
 const HeroBuyProperty = () => {
   // 🔹 Fetch all selling properties
+  const dispatch = useDispatch();
+  const router = useRouter()
   useGetAllSellingProperties();
   const { sellingProperties } = useSelector((store) => store.auth);
   console.log("these are the selling properties", sellingProperties);
@@ -32,34 +36,48 @@ const HeroBuyProperty = () => {
   const filteredProperties = useMemo(() => {
     const all = sellingProperties || [];
 
-    const {
-      state,
-      city,
-      locality,
-      propertyTypes,
-      priceRange,
-      rating,
-    } = filters;
+    const { state, city, locality, propertyTypes, priceRange, rating } =
+      filters;
 
     if (!all.length) return [];
 
     const filtered = all.filter((property) => {
-      const { address, price, overallratings, propertyTypes: type } = property || {};
+      const {
+        address,
+        price,
+        overallratings,
+        propertyTypes: type,
+      } = property || {};
 
-      const stateMatch = state ? address?.state?.toLowerCase().includes(state.toLowerCase()) : true;
-      const cityMatch = city ? address?.city?.toLowerCase().includes(city.toLowerCase()) : true;
+      const stateMatch = state
+        ? address?.state?.toLowerCase().includes(state.toLowerCase())
+        : true;
+      const cityMatch = city
+        ? address?.city?.toLowerCase().includes(city.toLowerCase())
+        : true;
       const localityMatch = locality
-        ? address?.detailedAddress?.toLowerCase().includes(locality.toLowerCase())
+        ? address?.detailedAddress
+            ?.toLowerCase()
+            .includes(locality.toLowerCase())
         : true;
 
-      const typeMatch = propertyTypes.length > 0 ? propertyTypes.includes(type) : true;
+      const typeMatch =
+        propertyTypes.length > 0 ? propertyTypes.includes(type) : true;
 
       const numericPrice = Number(price) || 0;
-      const priceMatch = numericPrice >= priceRange[0] && numericPrice <= priceRange[1];
+      const priceMatch =
+        numericPrice >= priceRange[0] && numericPrice <= priceRange[1];
 
       const ratingMatch = (overallratings || 0) >= rating;
 
-      return stateMatch && cityMatch && localityMatch && typeMatch && priceMatch && ratingMatch;
+      return (
+        stateMatch &&
+        cityMatch &&
+        localityMatch &&
+        typeMatch &&
+        priceMatch &&
+        ratingMatch
+      );
     });
 
     console.log("Filtered Buy Properties Count:", filtered.length);
@@ -118,14 +136,24 @@ const HeroBuyProperty = () => {
           >
             {filteredProperties.map((property) => (
               <ShortCard
+                onClick={() => {
+                  dispatch(setSelectedProperty(property));
+                  router.push(`/sellProperty/${property._id}`);
+                }}
                 key={property._id}
                 image={property?.photos?.[0] || "/shortCard.png"}
                 title={property?.title || "Untitled Property"}
-                address={`${property?.address?.city || ""}, ${property?.address?.state || ""}`}
-                description={property?.description || "No description available"}
+                address={`${property?.address?.city || ""}, ${
+                  property?.address?.state || ""
+                }`}
+                description={
+                  property?.description || "No description available"
+                }
                 price={property?.price ? Number(property.price) : undefined}
                 ownerName={property?.owner?.fullName || "Unknown Owner"}
-                ownerPhoto={property?.ownerId?.profilePhoto || "/default-avatar.png"}
+                ownerPhoto={
+                  property?.ownerId?.profilePhoto || "/default-avatar.png"
+                }
                 isVerified={true}
               />
             ))}

@@ -6,6 +6,7 @@ import { Mail, Phone, Briefcase, StickyNote } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch"; // using shadcn/ui Switch
+import { useSelector } from "react-redux";
 
 export default function ProviderDetails({
   email,

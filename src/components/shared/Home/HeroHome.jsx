@@ -13,6 +13,7 @@ import {
 import { Country, State, City } from "country-state-city";
 
 export default function HeroHome({ filters, setFilters }) {
+  
   const [stateSuggestions, setStateSuggestions] = useState([]);
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [showStateSuggestions, setShowStateSuggestions] = useState(false);

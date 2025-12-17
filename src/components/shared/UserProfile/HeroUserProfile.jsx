@@ -190,6 +190,7 @@ const DynamicSection = ({ title, items, onAdd }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {items.map((item, idx) => (
           <PropertyCard
+          userName={item.owner.fullName}
             key={item._id || idx}
             image={item.photos?.[0]}
             price={item.price}

@@ -12,7 +12,7 @@ import PropertyDetails from "../RoomInside/PropertyDetails";
 import RoomPolicies from "../RoomInside/RoomPolicies";
 import ContactCard from "../RoomInside/ContactCard";
 import PropertyMap from "../RoomInside/PropertyMap";
-import ReviewsSection from "../RoomInside/ReviewSection";
+import ReviewsSection from "./ReviewSection";
 
 const HeroServiceInside = () => {
   const {id} = useParams()

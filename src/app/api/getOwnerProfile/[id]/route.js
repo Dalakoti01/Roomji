@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
@@ -39,10 +39,14 @@ export async function GET(req, { params }) {
       );
     }
 
-    // ✅ Fetch owner profile (bare minimum required)
+    // ✅ Fetch owner profile WITH populated reviews.userId
     const ownerProfile = await userModels
       .findById(id)
-      .select("-password -otp -otpExpire");
+      .select("-password -otp -otpExpire")
+      .populate({
+        path: "reviews.userId",
+        select: "fullName profilePhoto",
+      });
 
     if (!ownerProfile) {
       return NextResponse.json(
@@ -51,7 +55,7 @@ export async function GET(req, { params }) {
       );
     }
 
-    // ✅ Fetch all property-related data (default empty arrays)
+    // ✅ Fetch all property-related data
     const [
       rentedProperties,
       sellingProperties,
@@ -63,8 +67,6 @@ export async function GET(req, { params }) {
       serviceModels.find({ ownerId: id, isPublic: true }),
       shopModels.find({ ownerId: id, isPublic: true }),
     ]);
-
-   
 
     // ✅ Final response
     return NextResponse.json(

@@ -5,10 +5,14 @@ import TopFilter from "../Rooms/TopFilter";
 import LeftFilter from "./LeftFilter";
 import ShortCard from "../ShortCard";
 import useGetAllServices from "@/hooks/public/useGetAllServices";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { setSelectedProperty } from "@/redux/authSlice";
+import { useRouter } from "next/navigation";
 
 const HeroService = () => {
   // 🔹 Fetch all services
+  const dispatch = useDispatch();
+  const router = useRouter()
   useGetAllServices();
   const { allServices } = useSelector((store) => store.auth);
   console.log("these are the services", allServices);
@@ -32,29 +36,48 @@ const HeroService = () => {
   const filteredServices = useMemo(() => {
     const all = allServices || [];
 
-    const { state, city, locality, propertyTypes, priceRange, rating } = filters;
+    const { state, city, locality, propertyTypes, priceRange, rating } =
+      filters;
     if (!all.length) return [];
 
     const filtered = all.filter((service) => {
-      const { address, price, overallratings, propertyTypes: type } = service || {};
+      const {
+        address,
+        price,
+        overallratings,
+        propertyTypes: type,
+      } = service || {};
 
-      const stateMatch = state ? address?.state?.toLowerCase().includes(state.toLowerCase()) : true;
-      const cityMatch = city ? address?.city?.toLowerCase().includes(city.toLowerCase()) : true;
+      const stateMatch = state
+        ? address?.state?.toLowerCase().includes(state.toLowerCase())
+        : true;
+      const cityMatch = city
+        ? address?.city?.toLowerCase().includes(city.toLowerCase())
+        : true;
       const localityMatch = locality
-        ? address?.detailedAddress?.toLowerCase().includes(locality.toLowerCase())
+        ? address?.detailedAddress
+            ?.toLowerCase()
+            .includes(locality.toLowerCase())
         : true;
 
-      const typeMatch = propertyTypes.length > 0 ? propertyTypes.includes(type) : true;
+      const typeMatch =
+        propertyTypes.length > 0 ? propertyTypes.includes(type) : true;
 
       const numericPrice = parseFloat(price);
-      const priceMatch =
-        !isNaN(numericPrice)
-          ? numericPrice >= priceRange[0] && numericPrice <= priceRange[1]
-          : true;
+      const priceMatch = !isNaN(numericPrice)
+        ? numericPrice >= priceRange[0] && numericPrice <= priceRange[1]
+        : true;
 
       const ratingMatch = (overallratings || 0) >= rating;
 
-      return stateMatch && cityMatch && localityMatch && typeMatch && priceMatch && ratingMatch;
+      return (
+        stateMatch &&
+        cityMatch &&
+        localityMatch &&
+        typeMatch &&
+        priceMatch &&
+        ratingMatch
+      );
     });
 
     console.log("Filtered Services Count:", filtered.length);
@@ -67,7 +90,11 @@ const HeroService = () => {
     <div className="w-full min-h-screen bg-[#f9fafb]">
       {/* Top Filter */}
       <div className="bg-white shadow-sm p-5 w-full border-b">
-        <TopFilter selectedCategory="Services" filters={filters} setFilters={setFilters} />
+        <TopFilter
+          selectedCategory="Services"
+          filters={filters}
+          setFilters={setFilters}
+        />
       </div>
 
       {/* Layout */}
@@ -109,14 +136,22 @@ const HeroService = () => {
           >
             {filteredServices.map((service) => (
               <ShortCard
+                onClick={() => {
+                  dispatch(setSelectedProperty(service));
+                  router.push(`/service/${service._id}`);
+                }}
                 key={service._id}
                 image={service?.photos?.[0] || "/shortCard.png"}
                 title={service?.title || "Untitled Service"}
-                address={`${service?.address?.city || ""}, ${service?.address?.state || ""}`}
+                address={`${service?.address?.city || ""}, ${
+                  service?.address?.state || ""
+                }`}
                 description={service?.description || "No description available"}
                 price={service?.price ? Number(service.price) : undefined}
                 ownerName={service?.owner?.fullName || "Unknown Owner"}
-                ownerPhoto={service?.ownerId?.profilePhoto || "/default-avatar.png"}
+                ownerPhoto={
+                  service?.ownerId?.profilePhoto || "/default-avatar.png"
+                }
                 isVerified={true}
               />
             ))}

@@ -5,13 +5,17 @@ import TopFilter from "./TopFilter";
 import LeftFilter from "./LeftFilter";
 import ShortCard from "../ShortCard";
 import useGetAllRentedProperties from "@/hooks/public/useGetAllRentedProperties";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
+import { setSelectedProperty } from "@/redux/authSlice";
 
 const HeroRooms = () => {
   // 🔹 Fetch all rented properties
   useGetAllRentedProperties();
+  const router = useRouter();
+  const dispatch = useDispatch()
   const { rentedProperties } = useSelector((store) => store.auth);
-  console.log("these are the rented properties",rentedProperties)
+  console.log("these are the rented properties", rentedProperties);
   // 🔹 Shared filters
   const [filters, setFilters] = useState({
     state: "",
@@ -26,51 +30,74 @@ const HeroRooms = () => {
 
   const [sortOrder, setSortOrder] = useState("newest");
 
-const filteredProperties = useMemo(() => {
-  const all = rentedProperties || [];
+  const filteredProperties = useMemo(() => {
+    const all = rentedProperties || [];
 
-  const {
-    state,
-    city,
-    locality,
-    propertyTypes,
-    priceRange,
-    rating,
-    applyFilters,
-  } = filters;
+    const {
+      state,
+      city,
+      locality,
+      propertyTypes,
+      priceRange,
+      rating,
+      applyFilters,
+    } = filters;
 
-  if (!all.length) return [];
+    if (!all.length) return [];
 
-  const filtered = all.filter((property) => {
-    const { address, price, overallratings, propertyTypes: type } = property || {};
+    const filtered = all.filter((property) => {
+      const {
+        address,
+        price,
+        overallratings,
+        propertyTypes: type,
+      } = property || {};
 
-    const stateMatch = state ? address?.state?.toLowerCase().includes(state.toLowerCase()) : true;
-    const cityMatch = city ? address?.city?.toLowerCase().includes(city.toLowerCase()) : true;
-    const localityMatch = locality
-      ? address?.detailedAddress?.toLowerCase().includes(locality.toLowerCase())
-      : true;
+      const stateMatch = state
+        ? address?.state?.toLowerCase().includes(state.toLowerCase())
+        : true;
+      const cityMatch = city
+        ? address?.city?.toLowerCase().includes(city.toLowerCase())
+        : true;
+      const localityMatch = locality
+        ? address?.detailedAddress
+            ?.toLowerCase()
+            .includes(locality.toLowerCase())
+        : true;
 
-    const typeMatch = propertyTypes.length > 0 ? propertyTypes.includes(type) : true;
+      const typeMatch =
+        propertyTypes.length > 0 ? propertyTypes.includes(type) : true;
 
-    const numericPrice = Number(price) || 0;
-    const priceMatch = numericPrice >= priceRange[0] && numericPrice <= priceRange[1];
+      const numericPrice = Number(price) || 0;
+      const priceMatch =
+        numericPrice >= priceRange[0] && numericPrice <= priceRange[1];
 
-    const ratingMatch = (overallratings || 0) >= rating;
+      const ratingMatch = (overallratings || 0) >= rating;
 
-    return stateMatch && cityMatch && localityMatch && typeMatch && priceMatch && ratingMatch;
-  });
+      return (
+        stateMatch &&
+        cityMatch &&
+        localityMatch &&
+        typeMatch &&
+        priceMatch &&
+        ratingMatch
+      );
+    });
 
-  console.log("Filtered Properties Count:", filtered.length);
-  return sortOrder === "oldest" ? filtered.slice().reverse() : filtered;
-}, [rentedProperties, filters, sortOrder]);
+    console.log("Filtered Properties Count:", filtered.length);
+    return sortOrder === "oldest" ? filtered.slice().reverse() : filtered;
+  }, [rentedProperties, filters, sortOrder]);
 
-
-  console.log("all the filtered properties",filteredProperties)
+  console.log("all the filtered properties", filteredProperties);
 
   return (
     <div className="w-full min-h-screen bg-[#f9fafb]">
       <div className="bg-white shadow-sm p-5 w-full border-b">
-        <TopFilter selectedCategory="Rented Property" filters={filters} setFilters={setFilters} />
+        <TopFilter
+          selectedCategory="Rented Property"
+          filters={filters}
+          setFilters={setFilters}
+        />
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8 px-5 py-10 w-full max-w-[1400px] mx-auto">
@@ -107,14 +134,24 @@ const filteredProperties = useMemo(() => {
           >
             {filteredProperties.map((property) => (
               <ShortCard
+                onClick={() => {
+                  dispatch(setSelectedProperty(property));
+                  router.push(`/rentProperty/${property._id}`);
+                }}
                 key={property._id}
                 image={property?.photos?.[0] || "/shortCard.png"}
                 title={property?.title || "Untitled Property"}
-                address={`${property?.address?.city || ""}, ${property?.address?.state || ""}`}
-                description={property?.description || "No description available"}
+                address={`${property?.address?.city || ""}, ${
+                  property?.address?.state || ""
+                }`}
+                description={
+                  property?.description || "No description available"
+                }
                 price={property?.price ? Number(property.price) : undefined}
                 ownerName={property?.owner?.fullName || "Unknown Owner"}
-                ownerPhoto={property?.ownerId?.profilePhoto || "/default-avatar.png"}
+                ownerPhoto={
+                  property?.ownerId?.profilePhoto || "/default-avatar.png"
+                }
                 isVerified={true}
               />
             ))}

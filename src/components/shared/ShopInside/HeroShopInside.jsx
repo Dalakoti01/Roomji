@@ -11,8 +11,8 @@ import PropertyDetails from "../RoomInside/PropertyDetails";
 import RoomPolicies from "../RoomInside/RoomPolicies";
 import ContactCard from "../RoomInside/ContactCard";
 import PropertyMap from "../RoomInside/PropertyMap";
-import ReviewsSection from "../RoomInside/ReviewSection";
 import useGetSingleShop from "@/hooks/public/useGetSingleShop";
+import ReviewsSection from "./ReviewSection";
 
 const HeroShopInside = () => {
   const {id} = useParams()

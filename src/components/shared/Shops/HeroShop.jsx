@@ -5,13 +5,17 @@ import TopFilter from "../Rooms/TopFilter";
 import LeftFilter from "./LeftFilter";
 import ShortCard from "../ShortCard";
 import useGetAllShops from "@/hooks/public/useGetAllShops";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
+import { setSelectedProperty } from "@/redux/authSlice";
 
 const HeroShop = () => {
   // 🔹 Fetch all shops
   useGetAllShops();
   const { allShops } = useSelector((store) => store.auth);
   console.log("these are the shops", allShops);
+  const dispatch = useDispatch();
+  const router = useRouter();
 
   // 🔹 Shared filters
   const [filters, setFilters] = useState({
@@ -32,30 +36,47 @@ const HeroShop = () => {
   const filteredShops = useMemo(() => {
     const all = allShops || [];
 
-const { state, city, locality, category, priceRange, rating } = filters;
+    const { state, city, locality, category, priceRange, rating } = filters;
     if (!all.length) return [];
 
-const filtered = all.filter((shop) => {
-  const { address, price, overallratings, category: shopCategory } = shop || {};
+    const filtered = all.filter((shop) => {
+      const {
+        address,
+        price,
+        overallratings,
+        category: shopCategory,
+      } = shop || {};
 
-  const stateMatch = state ? address?.state?.toLowerCase().includes(state.toLowerCase()) : true;
-  const cityMatch = city ? address?.city?.toLowerCase().includes(city.toLowerCase()) : true;
-  const localityMatch = locality
-    ? address?.detailedAddress?.toLowerCase().includes(locality.toLowerCase())
-    : true;
+      const stateMatch = state
+        ? address?.state?.toLowerCase().includes(state.toLowerCase())
+        : true;
+      const cityMatch = city
+        ? address?.city?.toLowerCase().includes(city.toLowerCase())
+        : true;
+      const localityMatch = locality
+        ? address?.detailedAddress
+            ?.toLowerCase()
+            .includes(locality.toLowerCase())
+        : true;
 
-  const categoryMatch = category ? shopCategory === category : true;
+      const categoryMatch = category ? shopCategory === category : true;
 
-  const numericPrice = parseFloat(price);
-  const priceMatch =
-    !isNaN(numericPrice)
-      ? numericPrice >= priceRange[0] && numericPrice <= priceRange[1]
-      : true;
+      const numericPrice = parseFloat(price);
+      const priceMatch = !isNaN(numericPrice)
+        ? numericPrice >= priceRange[0] && numericPrice <= priceRange[1]
+        : true;
 
-  const ratingMatch = (overallratings || 0) >= rating;
+      const ratingMatch = (overallratings || 0) >= rating;
 
-  return stateMatch && cityMatch && localityMatch && categoryMatch && priceMatch && ratingMatch;
-});
+      return (
+        stateMatch &&
+        cityMatch &&
+        localityMatch &&
+        categoryMatch &&
+        priceMatch &&
+        ratingMatch
+      );
+    });
 
     console.log("Filtered Shops Count:", filtered.length);
     return sortOrder === "oldest" ? filtered.slice().reverse() : filtered;
@@ -67,7 +88,11 @@ const filtered = all.filter((shop) => {
     <div className="w-full min-h-screen bg-[#f9fafb]">
       {/* Top Filter */}
       <div className="bg-white shadow-sm p-5 w-full border-b">
-        <TopFilter selectedCategory="Shops" filters={filters} setFilters={setFilters} />
+        <TopFilter
+          selectedCategory="Shops"
+          filters={filters}
+          setFilters={setFilters}
+        />
       </div>
 
       {/* Layout */}
@@ -109,14 +134,22 @@ const filtered = all.filter((shop) => {
           >
             {filteredShops.map((shop) => (
               <ShortCard
+                onClick={() => {
+                  dispatch(setSelectedProperty(shop));
+                  router.push(`/rentShop/${shop._id}`);
+                }}
                 key={shop._id}
                 image={shop?.photos?.[0] || "/shortCard.png"}
                 title={shop?.title || "Untitled Shop"}
-                address={`${shop?.address?.city || ""}, ${shop?.address?.state || ""}`}
+                address={`${shop?.address?.city || ""}, ${
+                  shop?.address?.state || ""
+                }`}
                 description={shop?.description || "No description available"}
                 price={shop?.price ? Number(shop.price) : undefined}
                 ownerName={shop?.owner?.fullName || "Unknown Owner"}
-                ownerPhoto={shop?.ownerId?.profilePhoto || "/default-avatar.png"}
+                ownerPhoto={
+                  shop?.ownerId?.profilePhoto || "/default-avatar.png"
+                }
                 isVerified={true}
               />
             ))}
