@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, IndianRupee } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export default function ShortCard({
@@ -43,8 +43,8 @@ export default function ShortCard({
         />
 
         {price && (
-          <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-gray-900 text-sm font-medium px-3 py-1 rounded-md shadow-sm">
-            ${price.toLocaleString()} / mon
+          <div className="absolute flex bottom-3 left-3 bg-white/90 backdrop-blur-sm text-gray-900 text-sm font-medium px-3 py-1 rounded-md shadow-sm">
+            <IndianRupee size={18}/>{price.toLocaleString()} / mon
           </div>
         )}
       </div>

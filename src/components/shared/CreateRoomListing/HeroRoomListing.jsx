@@ -9,17 +9,47 @@ import LocationTabs from "../LocationTabs";
 import ImageUpload from "../ImageUpload";
 import ProviderDetails from "../ProviderDetails";
 import RoomForm from "./RoomForm";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
+import { setSavedProperty } from "@/redux/authSlice";
 
 export default function CreateRoomListing() {
+  const dispatch = useDispatch();
   const { user } = useSelector((store) => store.auth);
   const router = useRouter();
   // ✅ Collect data from child components
   const [locationData, setLocationData] = useState({});
   const [formData, setFormData] = useState({});
-  const [providerDetails, setProviderDetails] = useState({});
+  const [providerDetails, setProviderDetails] = useState({
+    fullName: user?.fullName || "",
+    email: user?.email || "",
+    phoneNumber: user?.phoneNumber || "",
+    showPhoneNumber: user?.showPhoneNumber || false,
+    profession: "",
+    personalNote: "",
+  });
   const [images, setImages] = useState([]);
+
+  const handleSaveListing = () => {
+    // optional basic validation
+    if (!formData.title || !locationData.city || !locationData.state) {
+      toast.error("Please fill title and location before saving");
+      return;
+    }
+
+    dispatch(
+      setSavedProperty({
+        title: formData.title || "",
+        description: formData.description || "",
+        price: formData.price || "",
+        city: locationData.city || "",
+        state: locationData.state || "",
+        detailedAddress: locationData.address || "",
+      })
+    );
+
+    toast.success("Listing saved locally");
+  };
 
   // ✅ Handle form submission
   const handlePublish = async () => {
@@ -76,6 +106,8 @@ export default function CreateRoomListing() {
       toast.dismiss();
 
       if (res.status === 201 && res.data.success) {
+        dispatch(setSavedProperty(null)); // Clear saved property on success
+
         toast.success("Property listed successfully!");
         router.push("/user/profile");
       } else if (
@@ -101,9 +133,14 @@ export default function CreateRoomListing() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Rent Shop Listing</h1>
+        <h1 className="text-3xl font-bold text-gray-800">
+          Rent Property Listing
+        </h1>
 
-        <Button className="bg-[#FF5A5F] hover:bg-[#ff6a6f] text-white flex items-center gap-2 cursor-pointer">
+        <Button
+          onClick={handleSaveListing}
+          className="bg-[#FF5A5F] hover:bg-[#ff6a6f] text-white flex items-center gap-2 cursor-pointer"
+        >
           <PlusSquare className="h-5 w-5" />
           Save Listing
         </Button>

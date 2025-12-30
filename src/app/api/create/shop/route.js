@@ -7,10 +7,7 @@ import { NextResponse } from "next/server";
 import shopModels from "@/models/shopModels";
 import RecentActivities from "@/models/recentActivitesModels";
 
-// ✅ Disable Next.js body parser for file uploads
-export const config = {
-  api: { bodyParser: false },
-};
+
 
 export async function POST(req) {
   try {
@@ -127,11 +124,24 @@ export async function POST(req) {
         !state ||
         !detailedAddress ||
         !price ||
-        !shopPolicies ||
         !uniqueCode ||
         !email ||
         !phoneNumber
     );
+
+    console.log("required values",
+      title,
+      description,
+      city,
+      state,
+      detailedAddress,
+      price,
+      uniqueCode,
+      email,
+      phoneNumber,
+      category
+    );
+    console.log("email",email ,"phoneNumber",phoneNumber)
     if (
       !title ||
       !description ||
@@ -139,7 +149,6 @@ export async function POST(req) {
       !state ||
       !detailedAddress ||
       !price ||
-      !shopPolicies ||
       !uniqueCode ||
       !email ||
       !phoneNumber ||

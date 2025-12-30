@@ -1,25 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { IndianRupee, Plus, X } from "lucide-react";
+import { useSelector } from "react-redux";
 
 export default function RoomForm({ onChange }) {
+  const { savedProperty } = useSelector((store) => store.auth);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
     category: "",
     price: "",
-    policies: [], // ✅ Must be an array
+    policies: [],
     newPolicy: "",
     amenities: [],
     securityDeposit: "",
     area: "",
   });
+
   const [customAmenity, setCustomAmenity] = useState("");
+
+  /* ✅ Hydrate form ONCE from savedProperty */
+  useEffect(() => {
+    if (savedProperty?.title) {
+      const hydrated = {
+        ...form,
+        title: savedProperty.title || "",
+        description: savedProperty.description || "",
+        price: savedProperty.price || "",
+      };
+
+      setForm(hydrated);
+      onChange && onChange(hydrated);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const recommended = [
     "Wi-Fi",
@@ -41,20 +61,20 @@ export default function RoomForm({ onChange }) {
     "Mess",
   ];
 
-  const toggleAmenity = (item) => {
-    const updated = form.amenities.includes(item)
-      ? form.amenities.filter((a) => a !== item)
-      : [...form.amenities, item];
-    updateField("amenities", updated);
-  };
-
   const updateField = (field, value) => {
     const updated = { ...form, [field]: value };
     setForm(updated);
     onChange && onChange(updated);
   };
 
-  // ✅ Fixed: Use direct state update to avoid race condition
+  const toggleAmenity = (item) => {
+    const updatedAmenities = form.amenities.includes(item)
+      ? form.amenities.filter((a) => a !== item)
+      : [...form.amenities, item];
+
+    updateField("amenities", updatedAmenities);
+  };
+
   const handleAddPolicy = () => {
     const trimmed = form.newPolicy.trim();
     if (!trimmed) return;
@@ -105,7 +125,7 @@ export default function RoomForm({ onChange }) {
         />
       </div>
 
-      {/* ✅ Property Type (converted to select) */}
+      {/* Property Type */}
       <div className="mb-6">
         <Label htmlFor="category" className="text-lg">
           Property Type
@@ -144,6 +164,7 @@ export default function RoomForm({ onChange }) {
       {/* Amenities */}
       <div className="mb-6">
         <Label className="text-lg">Features / Amenities</Label>
+
         <div className="flex flex-wrap gap-2 mt-3">
           {recommended.map((item) => (
             <Button
@@ -152,8 +173,8 @@ export default function RoomForm({ onChange }) {
               variant={form.amenities.includes(item) ? "default" : "outline"}
               className={`px-3 py-1 rounded-full text-sm ${
                 form.amenities.includes(item)
-                  ? "bg-[#FF5A5F] cursor-pointer text-white hover:bg-[#ff6a6f]"
-                  : "border cursor-pointer border-gray-300 hover:border-[#FF5A5F] hover:text-[#FF5A5F]"
+                  ? "bg-[#FF5A5F] text-white hover:bg-[#ff6a6f] cursor-pointer"
+                  : "border border-gray-300 hover:border-[#FF5A5F] hover:text-[#FF5A5F] cursor-pointer"
               }`}
               onClick={() => toggleAmenity(item)}
             >
@@ -192,7 +213,6 @@ export default function RoomForm({ onChange }) {
           </Button>
         </div>
 
-        {/* ✅ Visible List of Selected Amenities */}
         {form.amenities.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {form.amenities.map((amenity, index) => (
@@ -204,7 +224,7 @@ export default function RoomForm({ onChange }) {
                 <button
                   type="button"
                   onClick={() => toggleAmenity(amenity)}
-                  className="text-pink-600 hover:text-pink-800 cursor-pointer"
+                  className="cursor-pointer"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -217,11 +237,15 @@ export default function RoomForm({ onChange }) {
       {/* Security Deposit & Area */}
       <div className="flex flex-col sm:flex-row gap-3 mt-4">
         <div className="flex-1">
-          <Label className="text-sm text-gray-600">Security Deposit (₹)</Label>
+          <Label className="text-sm text-gray-600">
+            Security Deposit (₹)
+          </Label>
           <Input
             type="number"
             value={form.securityDeposit}
-            onChange={(e) => updateField("securityDeposit", e.target.value)}
+            onChange={(e) =>
+              updateField("securityDeposit", e.target.value)
+            }
             placeholder="e.g. 1000"
             className="mt-1"
           />
@@ -238,9 +262,10 @@ export default function RoomForm({ onChange }) {
         </div>
       </div>
 
-      {/* ✅ Policies */}
+      {/* Policies */}
       <div className="mb-8 mt-4">
         <Label className="text-lg">Room Policies</Label>
+
         <div className="flex items-center gap-2 mt-2">
           <Input
             placeholder="Add a policy (e.g. 'No smoking')"
@@ -262,7 +287,6 @@ export default function RoomForm({ onChange }) {
           </Button>
         </div>
 
-        {/* ✅ Display Policies */}
         {form.policies.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {form.policies.map((policy, idx) => (
@@ -277,13 +301,15 @@ export default function RoomForm({ onChange }) {
                     setForm((prev) => {
                       const updated = {
                         ...prev,
-                        policies: prev.policies.filter((_, i) => i !== idx),
+                        policies: prev.policies.filter(
+                          (_, i) => i !== idx
+                        ),
                       };
                       onChange && onChange(updated);
                       return updated;
                     });
                   }}
-                  className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                  className="cursor-pointer"
                 >
                   <X className="h-3 w-3" />
                 </button>

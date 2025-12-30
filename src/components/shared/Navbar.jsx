@@ -128,7 +128,7 @@ const Navbar = () => {
                       >
                         Post
                       </Button>
-                        <Button
+                      <Button
                         variant="outline"
                         onClick={() => {
                           router.push("/user/message");
@@ -159,7 +159,7 @@ const Navbar = () => {
                         Contact Admin
                       </Button>
 
-                         <Button
+                      <Button
                         variant="outline"
                         onClick={() => {
                           router.push("/user/change-password");
@@ -180,7 +180,7 @@ const Navbar = () => {
                         Feedback
                       </Button>
 
-                        <Button
+                      <Button
                         variant="outline"
                         onClick={() => {
                           router.push("/user/deleteAccount");
@@ -261,6 +261,54 @@ const Navbar = () => {
                   className="w-full border-[#eb4c60] cursor-pointer text-[#eb4c60] hover:bg-[#eb4c60] hover:text-white"
                 >
                   Feedback
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    router.push("/user/message");
+                    setPopoverOpen(false); // ✅ close popover when dialog opens
+                  }}
+                  className="w-full border-[#eb4c60] cursor-pointer text-[#eb4c60] hover:bg-[#eb4c60] hover:text-white"
+                >
+                  Messages
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    router.push("/user/pricing");
+                    setPopoverOpen(false); // ✅ close after click
+                  }}
+                  className="w-full border-[#eb4c60] cursor-pointer text-[#eb4c60] hover:bg-[#eb4c60] hover:text-white"
+                >
+                  Pricing
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    router.push("/user/change-password");
+                    setPopoverOpen(false); // ✅ close after click
+                  }}
+                  className="w-full border-[#eb4c60] cursor-pointer text-[#eb4c60] hover:bg-[#eb4c60] hover:text-white"
+                >
+                  Change Password
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    router.push("/user/deleteAccount");
+                    setPopoverOpen(false); // ✅ close after click
+                  }}
+                  className="w-full border-[#eb4c60] cursor-pointer text-[#eb4c60] hover:bg-[#eb4c60] hover:text-white"
+                >
+                  Delete Account
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleLogout}
+                  className="w-full bg-[#eb4c60] cursor-pointer hover:bg-[#d43c50] text-white"
+                >
+                  Logout
                 </Button>
               </>
             )}

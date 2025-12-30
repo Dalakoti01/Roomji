@@ -9,18 +9,48 @@ import LocationTabs from "../LocationTabs";
 import ImageUpload from "../ImageUpload";
 import ServiceForm from "./ServiceForm";
 import ProviderDetails from "../ProviderDetails";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
+import { setSavedProperty } from "@/redux/authSlice";
 
 export default function CreateServiceListing() {
   const { user } = useSelector((store) => store.auth);
   const router = useRouter();
+  const dispatch = useDispatch();
 
   // ✅ Collect data from child components
   const [locationData, setLocationData] = useState({});
   const [formData, setFormData] = useState({});
-  const [providerDetails, setProviderDetails] = useState({});
+  const [providerDetails, setProviderDetails] = useState({
+    fullName: user?.fullName || "",
+    email: user?.email || "",
+    phoneNumber: user?.phoneNumber || "",
+    showPhoneNumber: user?.showPhoneNumber || false,
+    profession: "",
+    personalNote: "",
+  });
   const [images, setImages] = useState([]);
+
+  const handleSaveListing = () => {
+    // optional basic validation
+    if (!formData.title || !locationData.city || !locationData.state) {
+      toast.error("Please fill title and location before saving");
+      return;
+    }
+
+    dispatch(
+      setSavedProperty({
+        title: formData.title || "",
+        description: formData.description || "",
+        price: formData.price || "",
+        city: locationData.city || "",
+        state: locationData.state || "",
+        detailedAddress: locationData.address || "",
+      })
+    );
+
+    toast.success("Listing saved locally");
+  };
 
   // ✅ Handle form submission
   const handlePublish = async () => {
@@ -76,6 +106,8 @@ export default function CreateServiceListing() {
       toast.dismiss();
 
       if (res.status === 201 && res.data.success) {
+        dispatch(setSavedProperty(null)); // Clear saved property on success
+
         toast.success("Service listed successfully!");
         router.push("/user/profile");
       } else if (
@@ -105,7 +137,10 @@ export default function CreateServiceListing() {
           Create Service Listing
         </h1>
 
-        <Button className="bg-[#FF5A5F] hover:bg-[#ff6a6f] text-white flex items-center gap-2 cursor-pointer">
+        <Button
+          onClick={handleSaveListing}
+          className="bg-[#FF5A5F] hover:bg-[#ff6a6f] text-white flex items-center gap-2 cursor-pointer"
+        >
           <PlusSquare className="h-5 w-5" />
           Save Listing
         </Button>
@@ -126,7 +161,7 @@ export default function CreateServiceListing() {
         </div>
         <div className="w-full md:w-1/3">
           <ProviderDetails
-          photo={user?.profilePhoto}
+            photo={user?.profilePhoto}
             fullName={user?.fullName}
             email={user?.email}
             phoneNumber={user?.phoneNumber}

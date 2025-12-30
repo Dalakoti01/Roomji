@@ -7,10 +7,7 @@ import { NextResponse } from "next/server";
 import rentedPropertiesModels from "@/models/rentedPropertiesModels";
 import RecentActivities from "@/models/recentActivitesModels";
 
-// ✅ Disable Next.js body parser for file uploads
-export const config = {
-  api: { bodyParser: false },
-};
+
 
 export async function POST(req) {
   try {
@@ -117,6 +114,18 @@ export async function POST(req) {
     } = fields;
 
     // ✅ Validate required fields
+    console.log("Important fields:", {
+      title,
+      description,
+      city,
+      state,
+      category,
+      detailedAddress,
+      price,
+      uniqueCode,
+      email,
+      phoneNumber,
+    });
     if (
       !title ||
       !description ||
@@ -125,7 +134,6 @@ export async function POST(req) {
       !category ||
       !detailedAddress ||
       !price ||
-      !roomPolicy ||
       !uniqueCode ||
       !email ||
       !phoneNumber

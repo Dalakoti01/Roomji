@@ -2,7 +2,11 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Star, Info } from "lucide-react";
+import { Star, Info, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import toast from "react-hot-toast";
+
 import {
   Tooltip,
   TooltipContent,
@@ -19,7 +23,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import toast from "react-hot-toast"; // ✅ import from react-hot-toast
 
 export default function PropertyCard({
   image,
@@ -28,18 +31,50 @@ export default function PropertyCard({
   location,
   description,
   propertyId,
-  type, // determines API endpoint
+  type, // rentedProperties | sellingProperties | shop | service
   showToggle = true,
-  userName ,
-  initialVisibility = true, // from backend
+  userName,
+  initialVisibility = true,
 }) {
+  const router = useRouter();
+
   const [isVisible, setIsVisible] = useState(initialVisibility);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openVisibilityDialog, setOpenVisibilityDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  /* ---------------- CARD NAVIGATION ---------------- */
+
+  const handleCardClick = () => {
+    // ⛔ block navigation if menu or dialog is open
+    if (menuOpen || openDeleteDialog || openVisibilityDialog) return;
+
+    if (!propertyId) return;
+
+    switch (type) {
+      case "rentedProperties":
+        router.push(`/rentProperty/${propertyId}`);
+        break;
+      case "shop":
+        router.push(`/rentShop/${propertyId}`);
+        break;
+      case "service":
+        router.push(`/service/${propertyId}`);
+        break;
+      case "sellingProperties":
+        router.push(`/sellProperty/${propertyId}`);
+        break;
+      default:
+        console.warn("Unknown property type:", type);
+    }
+  };
+
+  /* ---------------- VISIBILITY TOGGLE ---------------- */
 
   const handleToggle = (checked) => {
     if (!checked) {
-      setOpenDialog(true);
+      setOpenVisibilityDialog(true);
     } else {
       toggleVisibility(true);
     }
@@ -58,29 +93,83 @@ export default function PropertyCard({
 
       if (data.success) {
         setIsVisible(data.property?.isPublic ?? makePublic);
-        toast.success(data.message || "Property visibility updated successfully!");
+        toast.success(data.message || "Visibility updated");
       } else {
-        toast.error(data.message || "Failed to update property visibility!");
+        toast.error(data.message || "Failed to update visibility");
       }
-    } catch (err) {
-      console.error("Error updating property:", err);
-      toast.error("Something went wrong while updating visibility!");
+    } catch {
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
-      setOpenDialog(false);
+      setOpenVisibilityDialog(false);
     }
   };
 
-  const confirmRemoval = () => toggleVisibility(false);
+  /* ---------------- DELETE PROPERTY ---------------- */
 
-  const cancelRemoval = () => {
-    setIsVisible(true);
-    setOpenDialog(false);
+  const handleDelete = async () => {
+    try {
+      setLoading(true);
+
+      const res = await axios.delete("/api/delete/property", {
+        data: {
+          propertyId,
+          propertyType: type,
+        },
+      });
+
+      toast.success(res.data?.message || "Deleted successfully");
+      setOpenDeleteDialog(false);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to delete property");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
-      {/* Image + Price */}
+    <div
+      onClick={handleCardClick}
+      className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer relative"
+    >
+      {/* ---------- 3 DOT MENU ---------- */}
+      <div
+        className="absolute top-2 right-2 z-20"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="p-1 rounded-full bg-white shadow hover:bg-gray-100 cursor-pointer"
+        >
+          <EllipsisVertical size={18} />
+        </button>
+
+        {menuOpen && (
+          <div className="absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-md">
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                router.push(`/edit/${type}/${propertyId}`);
+              }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+            >
+              <Pencil size={14} /> Edit
+            </button>
+
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                setOpenDeleteDialog(true);
+              }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+            >
+              <Trash2 size={14} /> Delete
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ---------- IMAGE ---------- */}
       <div className="relative">
         <Image
           src={image}
@@ -94,36 +183,33 @@ export default function PropertyCard({
         </div>
       </div>
 
-      {/* Details */}
+      {/* ---------- DETAILS ---------- */}
       <div className="p-4">
         <h3 className="font-medium text-lg">{title}</h3>
         <p className="text-sm text-gray-500 mt-1">{location}</p>
         <p className="text-sm text-gray-600 mt-2 line-clamp-2">{description}</p>
       </div>
 
-      {/* Footer Section */}
+      {/* ---------- FOOTER ---------- */}
       {showToggle && (
-        <div className="px-4 pb-4 flex items-center justify-between border-t border-gray-100 pt-3">
-          {/* User Info */}
+        <div
+          className="px-4 pb-4 flex items-center justify-between border-t border-gray-100 pt-3"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center">
-            <div className="w-6 h-6 rounded-full overflow-hidden mr-2">
-              <Image
-                src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1480&q=80"
-                alt="User"
-                width={24}
-                height={24}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <Image
+              src="https://images.unsplash.com/photo-1633332755192-727a05c4013d"
+              alt="User"
+              width={24}
+              height={24}
+              className="rounded-full mr-2"
+            />
             <span className="text-sm">{userName}</span>
-            <div className="ml-1">
-              <span className="inline-flex items-center justify-center w-4 h-4 bg-red-500 rounded-full">
-                <Star size={10} color="white" fill="white" />
-              </span>
-            </div>
+            <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-red-500 rounded-full">
+              <Star size={10} color="white" fill="white" />
+            </span>
           </div>
 
-          {/* Toggle Info */}
           <div className="flex items-center space-x-2">
             <span className="text-xs">{isVisible ? "Public" : "Hidden"}</span>
             <TooltipProvider>
@@ -132,8 +218,7 @@ export default function PropertyCard({
                   <Info size={14} className="text-gray-500 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs">
-                  If you turn off this toggle, the property will go offline and
-                  will no longer be visible to anyone.
+                  Turning this off hides the listing from public view.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -141,36 +226,39 @@ export default function PropertyCard({
               checked={isVisible}
               onCheckedChange={handleToggle}
               disabled={loading}
-              className="cursor-pointer" // ✅ added
+              className="cursor-pointer"
             />
           </div>
         </div>
       )}
 
-      {/* Confirmation Dialog */}
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent className="sm:max-w-md">
+      {/* ---------- DELETE CONFIRMATION ---------- */}
+      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <DialogContent
+          onClick={(e) => e.stopPropagation()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
-            <DialogTitle>Remove Property from Public View</DialogTitle>
-            <DialogDescription className="text-sm text-gray-600">
-              Are you sure you want to remove this property from public view? It
-              will no longer be visible to other users.
+            <DialogTitle>Delete Property</DialogTitle>
+            <DialogDescription>
+              This action is irreversible. Are you sure you want to delete this
+              listing?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex justify-end space-x-2">
+          <DialogFooter>
             <Button
               variant="outline"
-              onClick={cancelRemoval}
+              onClick={() => setOpenDeleteDialog(false)}
               className="cursor-pointer"
             >
               Cancel
             </Button>
             <Button
-              onClick={confirmRemoval}
+              onClick={handleDelete}
               disabled={loading}
               className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
             >
-              {loading ? "Removing..." : "Yes, Remove"}
+              {loading ? "Deleting..." : "Yes, Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

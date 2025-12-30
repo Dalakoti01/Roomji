@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { IndianRupee, Plus, X } from "lucide-react";
+import { useSelector } from "react-redux";
 
 export default function ServiceForm({ onChange }) {
+  const { savedProperty } = useSelector((store) => store.auth);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -22,6 +25,22 @@ export default function ServiceForm({ onChange }) {
   const [customFeature, setCustomFeature] = useState("");
   const [customCategory, setCustomCategory] = useState("");
   const [isCustomCategory, setIsCustomCategory] = useState(false);
+
+   /* ✅ Hydrate form ONCE from savedProperty */
+    useEffect(() => {
+      if (savedProperty?.title) {
+        const hydrated = {
+          ...form,
+          title: savedProperty.title || "",
+          description: savedProperty.description || "",
+          price: savedProperty.price || "",
+        };
+  
+        setForm(hydrated);
+        onChange && onChange(hydrated);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
   const recommendedFeatures = [
     "Home Visit Available",
@@ -311,8 +330,6 @@ export default function ServiceForm({ onChange }) {
           </div>
         )}
       </div>
-
-      
     </form>
   );
 }

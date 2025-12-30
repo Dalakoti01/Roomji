@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { IndianRupee, Plus, X } from "lucide-react";
+import { useSelector } from "react-redux";
 
 export default function ApartmentForm({ onChange }) {
   const [form, setForm] = useState({
@@ -20,6 +21,24 @@ export default function ApartmentForm({ onChange }) {
     area: "",
   });
   const [customAmenity, setCustomAmenity] = useState("");
+
+  const { savedProperty } = useSelector((store) => store.auth);
+
+  /* ✅ Hydrate form ONCE from savedProperty */
+    useEffect(() => {
+      if (savedProperty?.title) {
+        const hydrated = {
+          ...form,
+          title: savedProperty.title || "",
+          description: savedProperty.description || "",
+          price: savedProperty.price || "",
+        };
+  
+        setForm(hydrated);
+        onChange && onChange(hydrated);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
   const recommended = [
     "Wi-Fi",

@@ -7,10 +7,7 @@ import { NextResponse } from "next/server";
 import serviceModels from "@/models/serviceModels";
 import RecentActivities from "@/models/recentActivitesModels";
 
-// ✅ Disable Next.js body parser for file uploads
-export const config = {
-  api: { bodyParser: false },
-};
+
 
 export async function POST(req) {
   try {

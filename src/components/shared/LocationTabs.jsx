@@ -6,9 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { MapPin, Building2, Locate } from "lucide-react";
 import { State, City } from "country-state-city";
+import { useSelector } from "react-redux";
 
 export default function LocationTabs({ onChange }) {
+  const { savedProperty } = useSelector((store) => store.auth);
+
   const [activeTab, setActiveTab] = useState(0);
+
+  // local state = single source of truth
   const [stateInput, setStateInput] = useState("");
   const [cityInput, setCityInput] = useState("");
   const [addressInput, setAddressInput] = useState("");
@@ -18,49 +23,110 @@ export default function LocationTabs({ onChange }) {
   const [allCities, setAllCities] = useState([]);
   const [filteredCities, setFilteredCities] = useState([]);
 
+  /* Load states */
   useEffect(() => {
-    const states = State.getStatesOfCountry("IN");
-    setAllStates(states);
+    setAllStates(State.getStatesOfCountry("IN"));
   }, []);
 
+  /* Hydrate ONCE from savedProperty */
   useEffect(() => {
-    onChange &&
-      onChange({
-        state: stateInput,
-        city: cityInput,
-        address: addressInput,
+    if (savedProperty) {
+      setStateInput(savedProperty.state || "");
+      setCityInput(savedProperty.city || "");
+      setAddressInput(savedProperty.detailedAddress || "");
+
+      // notify parent ONCE during hydration
+      onChange?.({
+        state: savedProperty.state || "",
+        city: savedProperty.city || "",
+        address: savedProperty.detailedAddress || "",
       });
-  }, [stateInput, cityInput, addressInput]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ---------- Handlers ---------- */
 
   const handleStateChange = (e) => {
     const value = e.target.value;
+
     setStateInput(value);
-    if (!value) return setFilteredStates([]);
-    const filtered = allStates.filter((s) =>
-      s.name.toLowerCase().startsWith(value.toLowerCase())
+    setCityInput("");
+    setFilteredCities([]);
+
+    onChange?.({
+      state: value,
+      city: "",
+      address: addressInput,
+    });
+
+    if (!value) {
+      setFilteredStates([]);
+      return;
+    }
+
+    setFilteredStates(
+      allStates.filter((s) =>
+        s.name.toLowerCase().startsWith(value.toLowerCase())
+      )
     );
-    setFilteredStates(filtered);
   };
 
   const handleSelectState = (state) => {
     setStateInput(state.name);
     setFilteredStates([]);
     setAllCities(City.getCitiesOfState("IN", state.isoCode));
+
+    onChange?.({
+      state: state.name,
+      city: "",
+      address: addressInput,
+    });
   };
 
   const handleCityChange = (e) => {
     const value = e.target.value;
+
     setCityInput(value);
-    if (!value) return setFilteredCities([]);
-    const filtered = allCities.filter((c) =>
-      c.name.toLowerCase().startsWith(value.toLowerCase())
+
+    onChange?.({
+      state: stateInput,
+      city: value,
+      address: addressInput,
+    });
+
+    if (!value) {
+      setFilteredCities([]);
+      return;
+    }
+
+    setFilteredCities(
+      allCities.filter((c) =>
+        c.name.toLowerCase().startsWith(value.toLowerCase())
+      )
     );
-    setFilteredCities(filtered);
   };
 
   const handleSelectCity = (city) => {
     setCityInput(city.name);
     setFilteredCities([]);
+
+    onChange?.({
+      state: stateInput,
+      city: city.name,
+      address: addressInput,
+    });
+  };
+
+  const handleAddressChange = (e) => {
+    const value = e.target.value;
+    setAddressInput(value);
+
+    onChange?.({
+      state: stateInput,
+      city: cityInput,
+      address: value,
+    });
   };
 
   return (
@@ -80,7 +146,7 @@ export default function LocationTabs({ onChange }) {
             key={tab.id}
             variant="ghost"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-3 rounded-none border-b-2 transition-all duration-200 cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-3 rounded-none border-b-2 cursor-pointer ${
               activeTab === tab.id
                 ? "border-[#FF5A5F] text-[#FF5A5F] font-medium"
                 : "border-transparent text-gray-600 hover:text-[#FF5A5F]"
@@ -105,9 +171,9 @@ export default function LocationTabs({ onChange }) {
             />
             {filteredStates.length > 0 && (
               <ul className="absolute z-10 bg-white border rounded-md shadow-md max-h-48 overflow-auto w-full">
-                {filteredStates.map((s) => (
+                {filteredStates.map((s, index) => (
                   <li
-                    key={s.isoCode}
+                    key={`${s.isoCode}-${index}`}
                     onClick={() => handleSelectState(s)}
                     className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
                   >
@@ -130,9 +196,9 @@ export default function LocationTabs({ onChange }) {
             />
             {filteredCities.length > 0 && (
               <ul className="absolute z-10 bg-white border rounded-md shadow-md max-h-48 overflow-auto w-full">
-                {filteredCities.map((c) => (
+                {filteredCities.map((c, index) => (
                   <li
-                    key={c.name}
+                    key={`${c.name}-${index}`}
                     onClick={() => handleSelectCity(c)}
                     className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
                   >
@@ -149,7 +215,7 @@ export default function LocationTabs({ onChange }) {
             <Label>Proper Location</Label>
             <Input
               value={addressInput}
-              onChange={(e) => setAddressInput(e.target.value)}
+              onChange={handleAddressChange}
               placeholder="Enter detailed address..."
               className="mt-2"
             />

@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { IndianRupee, Plus, X } from "lucide-react";
+import { useSelector } from "react-redux";
 
 export default function ShopForm({ onChange }) {
+  const { savedProperty } = useSelector((store) => store.auth);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -20,6 +23,22 @@ export default function ShopForm({ onChange }) {
     area: "",
   });
   const [customAmenity, setCustomAmenity] = useState("");
+
+  /* ✅ Hydrate form ONCE from savedProperty */
+  useEffect(() => {
+    if (savedProperty?.title) {
+      const hydrated = {
+        ...form,
+        title: savedProperty.title || "",
+        description: savedProperty.description || "",
+        price: savedProperty.price || "",
+      };
+
+      setForm(hydrated);
+      onChange && onChange(hydrated);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 🏪 Shop-related amenities
   const recommended = [
@@ -119,7 +138,9 @@ export default function ShopForm({ onChange }) {
           <option value="">Select Shop Type</option>
           <option value="Retail Shops">Retail Shops</option>
           <option value="Showrooms">Showrooms</option>
-          <option value="Food & Beverage Outlets">Food & Beverage Outlets</option>
+          <option value="Food & Beverage Outlets">
+            Food & Beverage Outlets
+          </option>
           <option value="Market Stalls & Booths">Market Stalls & Booths</option>
           <option value="Street-facing & Standalone Stores">
             Street-facing & Standalone Stores
@@ -278,7 +299,9 @@ export default function ShopForm({ onChange }) {
                     setForm((prev) => {
                       const updated = {
                         ...prev,
-                        shopPolicies: prev.shopPolicies.filter((_, i) => i !== idx),
+                        shopPolicies: prev.shopPolicies.filter(
+                          (_, i) => i !== idx
+                        ),
                       };
                       onChange && onChange(updated);
                       return updated;
