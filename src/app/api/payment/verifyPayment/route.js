@@ -9,6 +9,7 @@ export async function POST(req) {
   try {
     await connectDB();
 
+    /* ---------------- AUTH ---------------- */
     const userId = await getUserIdFromRequest();
     if (!userId) {
       return NextResponse.json(
@@ -17,7 +18,10 @@ export async function POST(req) {
       );
     }
 
-    const existingUser = await userModels.findById(userId);
+    const existingUser = await userModels.findById(userId).select(
+      "fullName email"
+    );
+
     if (!existingUser) {
       return NextResponse.json(
         { message: "User Not Found", success: false },
@@ -25,6 +29,7 @@ export async function POST(req) {
       );
     }
 
+    /* ---------------- REQUEST DATA ---------------- */
     const {
       razorpay_order_id,
       razorpay_payment_id,
@@ -44,6 +49,7 @@ export async function POST(req) {
       );
     }
 
+    /* ---------------- PAYMENT RECORD ---------------- */
     const payment = await paymentModels.findById(paymentId);
     if (!payment) {
       return NextResponse.json(
@@ -52,102 +58,107 @@ export async function POST(req) {
       );
     }
 
-    // Verify signature
+    /* ---------------- SIGNATURE VERIFY ---------------- */
     const generatedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_API_SECRET)
-      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
     if (generatedSignature !== razorpay_signature) {
-      payment.status = "failed";
-      await payment.save();
+      await paymentModels.updateOne(
+        { _id: payment._id },
+        { $set: { status: "failed" } }
+      );
+
       return NextResponse.json(
         { message: "Payment verification failed", success: false },
         { status: 400 }
       );
     }
 
-    // Mark payment as verified
-    payment.razorpayPaymentId = razorpay_payment_id;
-    payment.razorpaySignature = razorpay_signature;
-    payment.status = "paid";
-    payment.verified = true;
-    payment.userId = userId;
-    payment.fullName = existingUser.fullName;
-    payment.email = existingUser.email;
-    await payment.save();
+    /* ---------------- UPDATE PAYMENT ---------------- */
+    await paymentModels.updateOne(
+      { _id: payment._id },
+      {
+        $set: {
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature,
+          status: "paid",
+          verified: true,
+          userId,
+          fullName: existingUser.fullName,
+          email: existingUser.email,
+        },
+      }
+    );
 
-    // Activate user's subscription + update currentPlanDetails
-    // Expect payment.planDetail to contain planDuration and planType, and optionally planAmount
+    /* ---------------- PLAN LOGIC ---------------- */
     const planDetail = payment.planDetail || {};
     const { planDuration, planType } = planDetail;
 
-    // Determine start & end dates
     const startDate = new Date();
     const endDate = new Date(startDate);
 
-    // defensive: handle common spellings in your earlier code
-    const dur = (planDuration || "").toString().toLowerCase();
-    if (dur === "quaterly" || dur === "quarterly") endDate.setMonth(endDate.getMonth() + 3);
-    else if (dur === "half-yearly" || dur === "half yearly" || dur === "halfyearly") endDate.setMonth(endDate.getMonth() + 6);
-    else if (dur === "annually" || dur === "yearly") endDate.setFullYear(endDate.getFullYear() + 1);
-    // else: no change (or you may add other durations)
+    const dur = (planDuration || "").toLowerCase();
+    if (dur === "quarterly" || dur === "quaterly") {
+      endDate.setMonth(endDate.getMonth() + 3);
+    } else if (dur.includes("half")) {
+      endDate.setMonth(endDate.getMonth() + 6);
+    } else if (dur.includes("year")) {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    }
 
-    // Map planType -> human readable planName (match currentPlanDetails enum)
     let planName = "Combined Plan";
     if (planType === "propertyPlan") planName = "Property Only";
     else if (planType === "servicePlan") planName = "Service Only";
-    else planName = "Combined Plan";
 
-    // Determine plan amount: try payment.planDetail.planAmount, fallback to payment.amount or payment.amountPaid
     const planAmount =
-      typeof planDetail.planAmount === "number"
-        ? planDetail.planAmount
-        : typeof payment.planAmount === "number"
-        ? payment.planAmount
-        : typeof payment.amount === "number"
-        ? payment.amount
-        : typeof payment.amountPaid === "number"
-        ? payment.amountPaid
-        : null;
+      planDetail.planAmount ??
+      payment.planAmount ??
+      payment.amount ??
+      payment.amountPaid ??
+      undefined;
 
-    // Update respective subscription object (keep previous behavior)
+    /* ---------------- USER UPDATE (SAFE) ---------------- */
+    const userUpdate = {
+      currentPlanDetails: {
+        planName,
+        planAmount,
+        isActive: true,
+      },
+    };
+
     if (planType === "propertyPlan") {
-      existingUser.propertySubscription = {
+      userUpdate.propertySubscription = {
         isActive: true,
         startDate,
         endDate,
       };
     } else if (planType === "servicePlan") {
-      existingUser.serviceSubscription = {
+      userUpdate.serviceSubscription = {
         isActive: true,
         startDate,
         endDate,
       };
     } else {
-      // if combined / unknown, set both (optional)
-      existingUser.propertySubscription = {
+      userUpdate.propertySubscription = {
         isActive: true,
         startDate,
         endDate,
       };
-      existingUser.serviceSubscription = {
+      userUpdate.serviceSubscription = {
         isActive: true,
         startDate,
         endDate,
       };
     }
 
-    // Update the new field currentPlanDetails on user
-    existingUser.currentPlanDetails = {
-      planName,
-      planAmount: planAmount !== null ? planAmount : undefined,
-      isActive: true,
-    };
+    await userModels.updateOne(
+      { _id: userId },
+      { $set: userUpdate }
+    );
 
-    // Save user
-    await existingUser.save();
-
+    /* ---------------- RESPONSE ---------------- */
     return NextResponse.json(
       {
         message: "Payment verified successfully and subscription activated.",

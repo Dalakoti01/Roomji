@@ -38,10 +38,17 @@ const userSchema = new Schema(
       default: true,
     },
     whatsappNumber: {
-      type: String,
-      set: (v) => String(v).replace(/\s+/g, "").trim(), // strip spaces
-      match: [/^\+?[0-9]{10,15}$/, "Please enter a valid phone number"],
+  type: String,
+  set: (v) => (v ? String(v).replace(/\s+/g, "").trim() : undefined),
+  validate: {
+    validator: function (v) {
+      if (!v) return true; // ✅ allow empty / undefined
+      return /^\+?[0-9]{10,15}$/.test(v);
     },
+    message: "Please enter a valid phone number",
+  },
+},
+
     whatsappNumberShow: {
       type: Boolean,
       default: true,

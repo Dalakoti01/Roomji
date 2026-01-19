@@ -3,17 +3,15 @@ import { getUserIdFromRequest } from "@/lib/getUserIdFromRequest";
 import { parseForm } from "@/lib/parseForm";
 import cloudinary from "@/lib/cloudinary";
 import userModels from "@/models/userModels";
-import { NextResponse } from "next/server";
 import serviceModels from "@/models/serviceModels";
 import RecentActivities from "@/models/recentActivitesModels";
-
-
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
     await connectDB();
 
-    // ✅ Authenticate user
+    /* ---------------- AUTH ---------------- */
     const userId = await getUserIdFromRequest(req);
     if (!userId) {
       return NextResponse.json(
@@ -25,6 +23,7 @@ export async function POST(req) {
     const existingUser = await userModels
       .findById(userId)
       .select("-password -otp");
+
     if (!existingUser) {
       return NextResponse.json(
         { message: "No such user found", success: false },
@@ -32,43 +31,44 @@ export async function POST(req) {
       );
     }
 
-    // ✅ 2. Check if property subscription has expired
+    /* ---------------- SUBSCRIPTION CHECK ---------------- */
     const now = new Date();
     const serviceSub = existingUser.serviceSubscription;
     let subscriptionActive = false;
 
-    if (serviceSub && serviceSub.isActive) {
-      // If endDate is expired, deactivate
+    if (serviceSub?.isActive) {
       if (serviceSub.endDate && new Date(serviceSub.endDate) < now) {
-        serviceSub.isActive = false;
-        await existingUser.save();
+        // deactivate expired subscription (SAFE)
+        await userModels.updateOne(
+          { _id: existingUser._id },
+          { $set: { "serviceSubscription.isActive": false } }
+        );
       } else {
         subscriptionActive = true;
       }
     }
 
-    // ✅ 3. Handle free trial logic
+    /* ---------------- FREE TRIAL LOGIC ---------------- */
     const freeTrial = existingUser.freeTrial;
     const freeTrialUsed = freeTrial?.oneTimeDone || false;
-    const freeTrialActive = freeTrial?.isActive || false;
 
-    // ✅ 4. Decide if posting is allowed
     if (!subscriptionActive) {
-      // Subscription not active — check free trial
       if (!freeTrialUsed) {
-        // Allow posting once and mark trial as used
-        existingUser.freeTrial.oneTimeDone = true;
-        existingUser.freeTrial.isActive = true;
-        existingUser.freeTrial.startDate = new Date();
-        existingUser.freeTrial.endDate = new Date(
-          Date.now() + 7 * 24 * 60 * 60 * 1000
-        ); // example: 7-day trial
-        await existingUser.save();
-      } else {
-        console.log(
-          "🛑 Free trial exhausted — blocking request for user:",
-          existingUser._id
+        // activate free trial ONCE (SAFE)
+        await userModels.updateOne(
+          { _id: existingUser._id },
+          {
+            $set: {
+              "freeTrial.oneTimeDone": true,
+              "freeTrial.isActive": true,
+              "freeTrial.startDate": new Date(),
+              "freeTrial.endDate": new Date(
+                Date.now() + 7 * 24 * 60 * 60 * 1000
+              ),
+            },
+          }
         );
+      } else {
         return NextResponse.json(
           {
             message:
@@ -81,10 +81,10 @@ export async function POST(req) {
       }
     }
 
-    // ✅ Parse multipart form data
+    /* ---------------- PARSE FORM ---------------- */
     const { fields, files } = await parseForm(req);
 
-    // Flatten single-element arrays
+    // flatten single-element arrays
     for (const key in fields) {
       if (Array.isArray(fields[key])) {
         fields[key] = fields[key][0];
@@ -114,18 +114,7 @@ export async function POST(req) {
       personalNote,
     } = fields;
 
-    console.log(
-      "all",
-      title,
-      description,
-      price,
-      duration,
-      uniqueCode,
-      email,
-      phoneNumber
-    );
-
-    // ✅ Validation
+    /* ---------------- VALIDATION ---------------- */
     if (
       !title ||
       !description ||
@@ -140,9 +129,10 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Handle file uploads
+    /* ---------------- FILE UPLOADS ---------------- */
     let uploadedUrls = [];
-    if (files && files.photos) {
+
+    if (files?.photos) {
       const photoArray = Array.isArray(files.photos)
         ? files.photos
         : [files.photos];
@@ -162,7 +152,7 @@ export async function POST(req) {
       }
     }
 
-    // ✅ Parse service features (array of strings)
+    /* ---------------- SERVICE FEATURES ---------------- */
     const finalServiceFeatures = Array.isArray(serviceFeatures)
       ? serviceFeatures.flatMap((f) =>
           f.includes(",") ? f.split(",").map((i) => i.trim()) : [f.trim()]
@@ -171,7 +161,7 @@ export async function POST(req) {
       ? serviceFeatures.split(",").map((f) => f.trim())
       : [];
 
-    // ✅ Create new Service document
+    /* ---------------- CREATE SERVICE ---------------- */
     const newService = new serviceModels({
       ownerId: existingUser._id,
       title,
@@ -181,7 +171,7 @@ export async function POST(req) {
       policies: Array.isArray(policies)
         ? policies
         : typeof policies === "string"
-        ? policies.split(",").map((r) => r.trim())
+        ? policies.split(",").map((p) => p.trim())
         : [],
       price,
       uniqueCode,
@@ -209,16 +199,22 @@ export async function POST(req) {
     });
 
     await newService.save();
-    existingUser.totalService++;
-    await existingUser.save();
 
+    /* ---------------- SAFE COUNTER UPDATE ---------------- */
+    await userModels.updateOne(
+      { _id: existingUser._id },
+      { $inc: { totalService: 1 } }
+    );
+
+    /* ---------------- ACTIVITY LOG ---------------- */
     await RecentActivities.create({
-      user : existingUser._id,
-      fullName : existingUser.fullName,
-      type : 'Property Posted',
-      content : `${existingUser.fullName} has posted a new service: ${newService.title}.`,
-    })
+      user: existingUser._id,
+      fullName: existingUser.fullName,
+      type: "Property Posted",
+      content: `${existingUser.fullName} has posted a new service: ${newService.title}.`,
+    });
 
+    /* ---------------- RESPONSE ---------------- */
     return NextResponse.json(
       {
         message: "Service added successfully!",

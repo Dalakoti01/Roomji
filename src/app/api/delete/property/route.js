@@ -19,20 +19,9 @@ export async function DELETE(req) {
       );
     }
 
-    const existingUser = await userModels
-      .findById(userId)
-      .select("totalService totalProperties");
-
-    if (!existingUser) {
-      return NextResponse.json(
-        { message: "User not found", success: false },
-        { status: 404 }
-      );
-    }
-
     const { propertyId, propertyType } = await req.json();
 
-    if (!propertyId || propertyId.trim() === "") {
+    if (!propertyId) {
       return NextResponse.json(
         { message: "Property ID is required", success: false },
         { status: 400 }
@@ -46,12 +35,9 @@ export async function DELETE(req) {
         ownerId: userId,
       });
 
-      if (result.deletedCount === 0) {
+      if (!result.deletedCount) {
         return NextResponse.json(
-          {
-            message: "Rented Property not found or not authorized",
-            success: false,
-          },
+          { message: "Rented Property not found", success: false },
           { status: 404 }
         );
       }
@@ -61,10 +47,14 @@ export async function DELETE(req) {
         { $inc: { totalProperties: -1 } }
       );
 
-      return NextResponse.json(
-        { message: "Rented Property deleted successfully", success: true },
-        { status: 200 }
-      );
+      const updatedData = await rentedPropertiesModels.find({ ownerId: userId });
+
+      return NextResponse.json({
+        success: true,
+        message: "Rented Property deleted successfully",
+        deletedType: "rentedProperties",
+        updatedData,
+      });
     }
 
     /* ---------------- SELLING PROPERTY ---------------- */
@@ -74,12 +64,9 @@ export async function DELETE(req) {
         ownerId: userId,
       });
 
-      if (result.deletedCount === 0) {
+      if (!result.deletedCount) {
         return NextResponse.json(
-          {
-            message: "Selling Property not found or not authorized",
-            success: false,
-          },
+          { message: "Selling Property not found", success: false },
           { status: 404 }
         );
       }
@@ -89,10 +76,14 @@ export async function DELETE(req) {
         { $inc: { totalProperties: -1 } }
       );
 
-      return NextResponse.json(
-        { message: "Selling Property deleted successfully", success: true },
-        { status: 200 }
-      );
+      const updatedData = await sellingPropertiesModels.find({ ownerId: userId });
+
+      return NextResponse.json({
+        success: true,
+        message: "Selling Property deleted successfully",
+        deletedType: "sellingProperties",
+        updatedData,
+      });
     }
 
     /* ---------------- SHOP ---------------- */
@@ -102,22 +93,21 @@ export async function DELETE(req) {
         ownerId: userId,
       });
 
-      if (result.deletedCount === 0) {
+      if (!result.deletedCount) {
         return NextResponse.json(
-          { message: "Shop not found or not authorized", success: false },
+          { message: "Shop not found", success: false },
           { status: 404 }
         );
       }
 
-      await userModels.updateOne(
-        { _id: userId, totalProperties: { $gt: 0 } },
-        { $inc: { totalProperties: -1 } }
-      );
+      const updatedData = await shopModels.find({ ownerId: userId });
 
-      return NextResponse.json(
-        { message: "Shop deleted successfully", success: true },
-        { status: 200 }
-      );
+      return NextResponse.json({
+        success: true,
+        message: "Shop deleted successfully",
+        deletedType: "shop",
+        updatedData,
+      });
     }
 
     /* ---------------- SERVICE ---------------- */
@@ -127,9 +117,9 @@ export async function DELETE(req) {
         ownerId: userId,
       });
 
-      if (result.deletedCount === 0) {
+      if (!result.deletedCount) {
         return NextResponse.json(
-          { message: "Service not found or not authorized", success: false },
+          { message: "Service not found", success: false },
           { status: 404 }
         );
       }
@@ -139,13 +129,16 @@ export async function DELETE(req) {
         { $inc: { totalService: -1 } }
       );
 
-      return NextResponse.json(
-        { message: "Service deleted successfully", success: true },
-        { status: 200 }
-      );
+      const updatedData = await serviceModels.find({ ownerId: userId });
+
+      return NextResponse.json({
+        success: true,
+        message: "Service deleted successfully",
+        deletedType: "service",
+        updatedData,
+      });
     }
 
-    /* ---------------- INVALID TYPE ---------------- */
     return NextResponse.json(
       { message: "Invalid property type", success: false },
       { status: 400 }

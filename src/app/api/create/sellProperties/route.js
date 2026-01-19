@@ -222,8 +222,11 @@ export async function POST(req) {
     });
 
     await sellingProperty.save();
-    existingUser.totalProperties++;
-    await existingUser.save()
+    await userModels.updateOne(
+  { _id: existingUser._id },
+  { $inc: { totalProperties: 1 } }
+);
+
 
     await RecentActivities.create({
       user : existingUser._id,

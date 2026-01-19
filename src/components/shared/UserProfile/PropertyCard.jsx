@@ -23,6 +23,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useDispatch } from "react-redux";
+import { setOwnerAllServices, setOwnerAllShops, setOwnerRentedProperties, setOwnerSellingProperties } from "@/redux/authSlice";
 
 export default function PropertyCard({
   image,
@@ -37,6 +39,8 @@ export default function PropertyCard({
   initialVisibility = true,
 }) {
   const router = useRouter();
+  const dispatch = useDispatch()
+  
 
   const [isVisible, setIsVisible] = useState(initialVisibility);
   const [openVisibilityDialog, setOpenVisibilityDialog] = useState(false);
@@ -108,24 +112,51 @@ export default function PropertyCard({
   /* ---------------- DELETE PROPERTY ---------------- */
 
   const handleDelete = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const res = await axios.delete("/api/delete/property", {
-        data: {
-          propertyId,
-          propertyType: type,
-        },
-      });
+    const res = await axios.delete("/api/delete/property", {
+      data: {
+        propertyId,
+        propertyType: type,
+      },
+    });
 
-      toast.success(res.data?.message || "Deleted successfully");
+    if (res.data.success) {
+      toast.success(res.data.message);
+
+      const { deletedType, updatedData } = res.data;
+
+      switch (deletedType) {
+        case "rentedProperties":
+          dispatch(setOwnerRentedProperties(updatedData));
+          break;
+
+        case "sellingProperties":
+          dispatch(setOwnerSellingProperties(updatedData));
+          break;
+
+        case "shop":
+          dispatch(setOwnerAllShops(updatedData));
+          break;
+
+        case "service":
+          dispatch(setOwnerAllServices(updatedData));
+          break;
+
+        default:
+          console.warn("Unknown deleted type");
+      }
+
       setOpenDeleteDialog(false);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to delete property");
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to delete property");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div
