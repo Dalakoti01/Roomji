@@ -18,7 +18,13 @@ export async function GET(req) {
     if (!allServices || allServices.length === 0) {
       return NextResponse.json(
         { message: "No Services found at this moment", success: false },
-        { status: 404 }
+        {
+        status: 200,
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      },
       );
     }
 

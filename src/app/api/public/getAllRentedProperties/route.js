@@ -1,8 +1,10 @@
 import { connectDB } from "@/lib/db";
-import { getUserIdFromRequest } from "@/lib/getUserIdFromRequest";
 import rentedPropertiesModels from "@/models/rentedPropertiesModels";
 import { NextResponse } from "next/server";
-import userModels from "@/models/userModels";
+
+const noCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+};
 
 export async function GET(req) {
   try {
@@ -10,20 +12,28 @@ export async function GET(req) {
 
     const allRentedProperties = await rentedPropertiesModels
       .find({ isPublic: true, blocked: false })
-      // ✅ Only include the "profilePhoto" field from ownerId
       .populate({
         path: "ownerId",
-        select: "profilePhoto", // <-- Only this field will come
+        select: "profilePhoto",
       })
       .sort({ createdAt: -1 });
 
+    // 🔹 No data case (EXPECTED in your current DB state)
     if (!allRentedProperties || allRentedProperties.length === 0) {
       return NextResponse.json(
-        { message: "No rented properties found", success: false },
-        { status: 404 },
+        {
+          message: "No rented properties found",
+          success: false,
+          allRentedProperties: [],
+        },
+        {
+          status: 404,
+          headers: noCacheHeaders,
+        }
       );
     }
 
+    // 🔹 Success case
     return NextResponse.json(
       {
         message: "Rented properties fetched successfully",
@@ -32,18 +42,22 @@ export async function GET(req) {
       },
       {
         status: 200,
-        headers: {
-          "Cache-Control":
-            "no-store, no-cache, must-revalidate, proxy-revalidate",
-        },
-      },
+        headers: noCacheHeaders,
+      }
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
 
+    // 🔹 Server error case
     return NextResponse.json(
-      { message: "Internal Server Error", success: false },
-      { status: 500 },
+      {
+        message: "Internal Server Error",
+        success: false,
+      },
+      {
+        status: 500,
+        headers: noCacheHeaders,
+      }
     );
   }
 }
