@@ -18,7 +18,7 @@ export async function GET(req) {
     if (!allSellingProperties || allSellingProperties.length === 0) {
       return NextResponse.json(
         { message: "No selling properties found", success: false },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -28,12 +28,18 @@ export async function GET(req) {
         success: true,
         allSellingProperties,
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      },
     );
   } catch (error) {
     return NextResponse.json(
       { message: "Internal Server Error", success: false },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -28,7 +28,13 @@ export async function GET(req) {
         success: true,
         allShops,
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      },
     );
   } catch (error) {
     return NextResponse.json(
