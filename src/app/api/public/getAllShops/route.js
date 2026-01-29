@@ -3,6 +3,10 @@ import shopModels from "@/models/shopModels";
 import { NextResponse } from "next/server";
 import userModels from "@/models/userModels";
 
+const noCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+};
+
 export async function GET(req) {
   try {
     await connectDB();
@@ -11,41 +15,35 @@ export async function GET(req) {
       .find({ isPublic: true, blocked: false })
       .populate({
         path: "ownerId",
-        select: "profilePhoto", // <-- Only this field will come
+        select: "profilePhoto",
       })
       .sort({ createdAt: -1 });
 
-    if (!allShops || allShops.length === 0) {
-      return NextResponse.json(
-        { message: "No Shops found at this moment", success: false },
-         {
-        status: 200,
-        headers: {
-          "Cache-Control":
-            "no-store, no-cache, must-revalidate, proxy-revalidate",
-        },
+    return NextResponse.json(
+      {
+        message: allShops.length
+          ? "Shops fetched successfully"
+          : "No shops found at this moment",
+        success: true,
+        allShops: allShops || [],
       },
-      );
-    }
+      {
+        status: 200,
+        headers: noCacheHeaders,
+      }
+    );
+  } catch (error) {
+    console.error(error);
 
     return NextResponse.json(
       {
-        message: "All The Shops fetched successfully",
-        success: true,
-        allShops,
+        message: "Internal Server Error",
+        success: false,
       },
       {
-        status: 200,
-        headers: {
-          "Cache-Control":
-            "no-store, no-cache, must-revalidate, proxy-revalidate",
-        },
-      },
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { message: "Internal Server Error", success: false },
-      { status: 500 }
+        status: 500,
+        headers: noCacheHeaders,
+      }
     );
   }
 }

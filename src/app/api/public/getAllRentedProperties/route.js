@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/db";
 import rentedPropertiesModels from "@/models/rentedPropertiesModels";
 import { NextResponse } from "next/server";
+import userModels from "@/models/userModels";
 
 const noCacheHeaders = {
   "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -18,27 +19,14 @@ export async function GET(req) {
       })
       .sort({ createdAt: -1 });
 
-    // 🔹 No data case (EXPECTED in your current DB state)
-    if (!allRentedProperties || allRentedProperties.length === 0) {
-      return NextResponse.json(
-        {
-          message: "No rented properties found",
-          success: false,
-          allRentedProperties: [],
-        },
-        {
-          status: 404,
-          headers: noCacheHeaders,
-        }
-      );
-    }
-
-    // 🔹 Success case
+    // ✅ ALWAYS 200
     return NextResponse.json(
       {
-        message: "Rented properties fetched successfully",
+        message: allRentedProperties.length
+          ? "Rented properties fetched successfully"
+          : "No rented properties found",
         success: true,
-        allRentedProperties,
+        allRentedProperties: allRentedProperties || [],
       },
       {
         status: 200,
@@ -48,7 +36,6 @@ export async function GET(req) {
   } catch (error) {
     console.error(error);
 
-    // 🔹 Server error case
     return NextResponse.json(
       {
         message: "Internal Server Error",

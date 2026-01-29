@@ -3,6 +3,10 @@ import sellingPropertiesModels from "@/models/sellingPropertiesModels";
 import { NextResponse } from "next/server";
 import userModels from "@/models/userModels";
 
+const noCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+};
+
 export async function GET(req) {
   try {
     await connectDB();
@@ -11,41 +15,35 @@ export async function GET(req) {
       .find({ isPublic: true, blocked: false })
       .populate({
         path: "ownerId",
-        select: "profilePhoto", // <-- Only this field will come
+        select: "profilePhoto",
       })
       .sort({ createdAt: -1 });
 
-    if (!allSellingProperties || allSellingProperties.length === 0) {
-      return NextResponse.json(
-        { message: "No selling properties found", success: false },
-        {
-        status: 200,
-        headers: {
-          "Cache-Control":
-            "no-store, no-cache, must-revalidate, proxy-revalidate",
-        },
+    return NextResponse.json(
+      {
+        message: allSellingProperties.length
+          ? "Selling properties fetched successfully"
+          : "No selling properties found",
+        success: true,
+        allSellingProperties: allSellingProperties || [],
       },
-      );
-    }
+      {
+        status: 200,
+        headers: noCacheHeaders,
+      }
+    );
+  } catch (error) {
+    console.error(error);
 
     return NextResponse.json(
       {
-        message: "Selling properties fetched successfully",
-        success: true,
-        allSellingProperties,
+        message: "Internal Server Error",
+        success: false,
       },
       {
-        status: 200,
-        headers: {
-          "Cache-Control":
-            "no-store, no-cache, must-revalidate, proxy-revalidate",
-        },
-      },
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { message: "Internal Server Error", success: false },
-      { status: 500 },
+        status: 500,
+        headers: noCacheHeaders,
+      }
     );
   }
 }
