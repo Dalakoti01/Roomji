@@ -9,6 +9,7 @@ export async function POST(req) {
   try {
     await connectDB();
 
+    console.log("Verifying payment... started");
     /* ---------------- AUTH ---------------- */
     const userId = await getUserIdFromRequest();
     if (!userId) {
@@ -60,9 +61,12 @@ export async function POST(req) {
 
     /* ---------------- SIGNATURE VERIFY ---------------- */
     const generatedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_API_SECRET)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest("hex");
+  .createHmac("sha256", "8tqbuZO9WCk2QIGpyd9aqIwL")
+  .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+  .digest("hex");
+
+console.log("Generated Signature:", generatedSignature);
+console.log("Razorpay Signature:", razorpay_signature);
 
     if (generatedSignature !== razorpay_signature) {
       await paymentModels.updateOne(

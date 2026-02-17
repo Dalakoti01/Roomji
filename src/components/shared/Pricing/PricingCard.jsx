@@ -1,10 +1,28 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { StarIcon, CheckCircleIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+/* ---------------------------------------------
+   Load Razorpay SDK ONLY ONCE (global promise)
+---------------------------------------------- */
+let razorpayPromise;
+
+const loadRazorpayScript = () => {
+  if (!razorpayPromise) {
+    razorpayPromise = new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
+  return razorpayPromise;
+};
 
 export default function PricingCard({
   title,
@@ -12,80 +30,83 @@ export default function PricingCard({
   description,
   isPopular = false,
   features,
-  itemType, // 'property' or 'service'
-  planDuration, // 'quaterly' | 'half-yearly' | 'annually'
+  itemType,
+  planDuration,
 }) {
-
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-  const router = useRouter()
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const handlePayment = async () => {
-    try {
-      const planType = itemType === 'property' ? 'propertyPlan' : 'servicePlan';
-      const amount = Number(price);
+    if (loading) return;
 
+    /* ---------------- SANITIZE PRICE ---------------- */
+    const amount = Number(String(price).replace(/[^\d]/g, ''));
+
+    if (!amount || isNaN(amount)) {
+      toast.error('Invalid plan amount');
+      return;
+    }
+
+    const planType =
+      itemType === 'property' ? 'propertyPlan' : 'servicePlan';
+
+    try {
+      setLoading(true);
+
+      /* ---------------- CREATE ORDER ---------------- */
       const res = await axios.post(
         '/api/payment/createOrder',
         { amount, planDuration, planType },
         { withCredentials: true }
       );
 
-      if (res.data.success) {
-        toast.success(res.data.message);
-        const isLoaded = await loadRazorpayScript();
-        if (!isLoaded) {
-          toast.error('Razorpay SDK failed to load');
-          return;
-        }
-
-        const options = {
-          key: res.data.key,
-          amount: res.data.order.amount,
-          currency: 'INR',
-          name: 'Roomji',
-          description: `${planDuration} ${itemType} plan`,
-          order_id: res.data.order.id,
-          handler: async function (response) {
-            try {
-              const verifyRes = await axios.post(
-                '/api/payment/verifyPayment',
-                {
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  paymentId: res.data.paymentId,
-                },
-                { withCredentials: true }
-              );
-
-              if (verifyRes.data.success) {
-                toast.success(verifyRes.data.message);
-                router.push("/")
-              } else {
-                toast.error(verifyRes.data.message);
-              }
-            } catch (err) {
-              toast.error(err.response?.data?.message || 'Verification failed');
-            }
-          },
-          theme: { color: '#eb4c60' },
-        };
-
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
-      } else {
-        toast.error(res.data.message);
+      if (!res.data?.success || !res.data?.order?.id) {
+        toast.error(res.data?.message || 'Failed to create order');
+        setLoading(false);
+        return;
       }
+
+      /* ---------------- LOAD SDK ---------------- */
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        toast.error('Razorpay SDK failed to load');
+        setLoading(false);
+        return;
+      }
+
+      console.log('🟢 Razorpay order created:', res.data.order.id);
+
+      /* ---------------- CHECKOUT OPTIONS ---------------- */
+     const options = {
+  key: 'rzp_test_Re0UG0czfqFcZu',
+  order_id: res.data.order.id,
+  name: 'Test',
+  handler: () => alert('SUCCESS'),
+};
+
+
+      /* ---------------- OPEN CHECKOUT ---------------- */
+      const razorpay = new window.Razorpay(options);
+
+      /* 🔥 PAYMENT FAILURE LISTENER (CRITICAL) */
+      razorpay.on('payment.failed', function (response) {
+        console.error('❌ RAZORPAY PAYMENT FAILED', response);
+
+        toast.error(
+          response.error?.description ||
+            response.error?.reason ||
+            'Payment failed'
+        );
+
+        setLoading(false);
+      });
+
+      console.log('🟡 Opening Razorpay checkout...');
+      razorpay.open();
     } catch (error) {
+      console.error('❌ PAYMENT FLOW ERROR', error);
       toast.error(error.response?.data?.message || 'Something went wrong');
+      setLoading(false);
     }
   };
 
@@ -115,9 +136,14 @@ export default function PricingCard({
 
         <button
           onClick={handlePayment}
-          className="w-full cursor-pointer py-2 border border-[#eb4c60] text-[#eb4c60] rounded-md hover:bg-[#eb4c60] hover:text-white transition-colors mb-4"
+          disabled={loading}
+          className={`w-full cursor-pointer py-2 border rounded-md transition-colors mb-4 ${
+            loading
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'border-[#eb4c60] text-[#eb4c60] hover:bg-[#eb4c60] hover:text-white'
+          }`}
         >
-          Switch to this Plan
+          {loading ? 'Processing…' : 'Switch to this Plan'}
         </button>
 
         <p className="text-sm text-center text-gray-600">
@@ -126,6 +152,7 @@ export default function PricingCard({
       </div>
 
       <div className="border-t border-gray-200" />
+
       <div className="p-6">
         <h4 className="font-semibold mb-2">Features</h4>
         <p className="text-sm text-gray-600 mb-4">Everything Creator & Plus</p>

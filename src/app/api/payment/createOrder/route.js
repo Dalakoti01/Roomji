@@ -6,8 +6,8 @@ import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_API_KEY,
-  key_secret: process.env.RAZORPAY_API_SECRET,
+ key_id: "rzp_test_Re0UG0czfqFcZu",
+  key_secret: "8tqbuZO9WCk2QIGpyd9aqIwL",
 });
 
 export async function POST(req) {
@@ -51,16 +51,19 @@ export async function POST(req) {
       planDetail: { planDuration, planType },
     });
 
+    console.log("Order created:", payment);
+
     return NextResponse.json(
-      {
-        message: "Order Created Successfully",
-        success: true,
-        order,
-        paymentId: payment._id,
-        key: process.env.RAZORPAY_API_KEY,
-      },
-      { status: 201 }
-    );
+  {
+    message: "Order Created Successfully",
+    success: true,
+    order,
+    paymentId: payment._id,
+    key: "rzp_test_Re0UG0czfqFcZu", // 👈 HARD-CODED PUBLIC KEY
+  },
+  { status: 201 }
+);
+
   } catch (error) {
     console.error("Error creating order:", error);
     return NextResponse.json(
