@@ -52,8 +52,7 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
           {/* Left Section */}
           <div className="flex gap-2 items-center">
-            <h1 className="text-[#eb4c60] text-lg font-semibold">LOGO</h1>
-            <p className="text-[#eb4c60] text-lg font-semibold">Roomji</p>
+            <p onClick={() => router.push("/")} className="text-[#eb4c60] cursor-pointer text-lg font-semibold">GharSewa</p>
           </div>
 
           {/* Desktop NavLinks */}

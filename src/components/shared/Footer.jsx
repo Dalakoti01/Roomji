@@ -2,18 +2,21 @@
 
 import Link from "next/link";
 import React from "react";
+import { useSelector } from "react-redux";
 
 const Footer = () => {
+  const { user } = useSelector((store) => store.auth);
   return (
     <footer className="bg-[#eb4c60] text-white py-10">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Brand / About Section */}
         <div>
-          <h2 className="text-xl font-bold mb-3">ROOM-JI</h2>
+          <h2 className="text-xl font-bold mb-3">GharSewa</h2>
           <p className="text-sm leading-relaxed">
-            Lorem Ipsum is simply dummy text of the printing and typesetting
-            industry. Lorem Ipsum has been the industry’s standard dummy text
-            ever since the 1500s.
+            GharSewa is your trusted platform for finding rooms, flats, shops,
+            and PGs with ease. We connect property owners and seekers through a
+            seamless experience, making renting and listing simple, reliable,
+            and hassle-free across cities.
           </p>
         </div>
 
@@ -31,13 +34,14 @@ const Footer = () => {
               <Link href="/shops">Shops</Link>
             </li>
             <li>
-              <Link href="/rooms">Rents</Link>
+              <Link href="/rent">Rents</Link>
             </li>
             <li>
-              <Link href="/pricing">Pricing</Link>
-            </li>
-            <li>
-              <Link href="/contact">Contact Us</Link>
+              {user ? (
+                <Link href="/user/pricing">Pricing</Link>
+              ) : (
+                <Link href="/auth">Pricing</Link>
+              )}
             </li>
           </ul>
         </div>
@@ -46,12 +50,12 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-semibold mb-3">Quick Links:</h3>
           <ul className="space-y-2 text-sm">
-            <li>
+            {/* <li>
               <Link href="/about">About Us</Link>
             </li>
             <li>
               <Link href="/faqs">FAQs</Link>
-            </li>
+            </li> */}
             <li>
               <Link href="/privacy-policy">Privacy Policy</Link>
             </li>
@@ -65,10 +69,10 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-semibold mb-3">Contact:</h3>
           <ul className="space-y-2 text-sm">
-            <li>+91 9999999999</li>
+            <li>+91 94541 91213</li>
             <li>Delhi, India</li>
             <li>
-              <a href="mailto:roomji@example.com">roomji@example.com</a>
+              <a href="mailto:roomji@example.com">gharsewa@gmail.com</a>
             </li>
           </ul>
         </div>
@@ -88,7 +92,7 @@ const Footer = () => {
         </div>
 
         <p className="text-sm text-center md:text-right">
-          Copyright © 2025, Practo. All Rights Reserved.
+          Copyright © 2025, GharSewa. All Rights Reserved.
         </p>
       </div>
     </footer>
