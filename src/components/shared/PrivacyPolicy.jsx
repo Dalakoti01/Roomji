@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
       {/* Content Container */}
       <div className="max-w-4xl mx-auto px-6 py-12 leading-relaxed">
         <p className="text-gray-700 mb-6">
-          This Privacy Notice for <span className="font-semibold">Roomji</span>{" "}
+          This Privacy Notice for <span className="font-semibold">GharSewa</span>{" "}
           ("we," "us," or "our") describes how and why we might access, collect,
           store, use, and/or share ("process") your personal information when
           you use our services ("Services").
@@ -27,7 +27,7 @@ export default function PrivacyPolicyPage() {
         </h2>
         <p className="mb-6">
           By using our website or mobile application, you agree to this Privacy
-          Policy. Roomji provides rental and property-related solutions for
+          Policy. GharSewa provides rental and property-related solutions for
           rooms, PGs, hostels, apartments, shops, and living services such as
           tiffin, Wi-Fi, cleaning, water supply, and more — creating a complete
           living and property ecosystem.
@@ -77,14 +77,14 @@ export default function PrivacyPolicyPage() {
             Google Maps Platform APIs to improve location accuracy and service
             relevance.
           </li>
-          <li>Service providers who help us operate Roomji efficiently.</li>
+          <li>Service providers who help us operate GharSewa efficiently.</li>
         </ul>
 
         <h2 className="text-2xl font-semibold text-[#eb4c60] mb-4">
           5. Third-Party Links and Websites
         </h2>
         <p className="mb-6">
-          Roomji may contain links to third-party websites or advertisements not
+          GharSewa may contain links to third-party websites or advertisements not
           controlled by us. We are not responsible for the safety, accuracy, or
           privacy practices of those third parties. Please review their privacy
           policies before sharing any data.
@@ -163,17 +163,17 @@ export default function PrivacyPolicyPage() {
               href="mailto:Nikunjjaiswal9294@gmail.com"
               className="text-[#eb4c60]"
             >
-              Nikunjjaiswal9294@gmail.com
+              kapoorshikhar1563@gmail.com
             </a>
           </li>
           <li>
-            <strong>Address:</strong> Roomji, Chauri Chaura, Mundera Bazar,
-            Gorakhpur, Uttar Pradesh 273201, India
+            <strong>Address:</strong> Laxmi Nagar, New Delhi, India
+              
           </li>
         </ul>
 
         <p className="mt-10 text-center text-sm text-gray-500">
-          © {new Date().getFullYear()} Roomji. All rights reserved.
+          © {new Date().getFullYear()} GharSewa. All rights reserved.
         </p>
       </div>
     </div>
